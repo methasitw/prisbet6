@@ -18,16 +18,28 @@ input double deviation= 2.333;         // Standard deviation  // 2.33
 input int InpFastEMA =7;            // InpFastEMA hal
 input int InpSlowEMA = 12 ;         // InpSlowEMA HAL
 
-input int MaxNumberOrders = 5 ;
-input int PeakVolumen = 15;
+input int MaxNumberOrders = 2 ;
+input int PeakVolumen = 2;
 
 input ENUM_TIMEFRAMES periodEMA = PERIOD_M6;
 input ENUM_TIMEFRAMES periodBB = PERIOD_H4;
 
-input double Risk = 100;    // apostamos 90 euros x entrada
-input int    TakeProfit        = 1200; 		// Take Profit distance
+// Variables piramidacion
+input ENUM_TIMEFRAMES periodEMAPyr = PERIOD_M10;
+input ENUM_TIMEFRAMES periodBBPyr = PERIOD_H4;
+//---indicator parameters
+input int bands_periodPyr= 20;        // Bollinger Bands period PYR
+input int bands_shiftPyr = 0;         // Bollinger Bands shift PYR
+input double deviationPyr= 1.66;         // Standard deviation  PYR // 2.33
+input int InpFastEMAPyr =7;            //InpFastEMA PYR
+input int InpSlowEMAPyr = 12 ;         //InpFastEMA PYR
+
+// Variables Risk Management
+input double Risk = 0.02;    // apostamos 90 euros x entrada
+input int    TakeProfit        = 1600; 		// Take Profit distance
 input double volP = 15; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
+
 
 class HAL   
   {
@@ -202,11 +214,18 @@ long HAL::CheckFilter(long type)
 //------------------------------------------------------------------ 
 void HAL::Deal(long dir, bool pyramiding)     // eliminado ratio, necesidad de dos deal diferentes para pir y para entrada inciial ¿?
 {
+ 
+ double risk = rm.m_account.FreeMargin()*Risk;
+
+   if (risk > 250)
+      risk = 250;
+      
+   double pips=rm.getPips();  
    if (pyramiding == true)           //piramida
    {
-     double pips=rm.getPips();    
-      pips = pips * volP ; // pongo un stop de 3/2 del ATR
-        double riesgo = Risk*2;
+      
+          pips = pips * volP ; // pongo un stop de 3/2 del ATR
+          double riesgo = risk * (6 - HistoryOrdersTotal() ) ;
            
            
              double lot =(riesgo + PositionGetDouble(POSITION_PROFIT)) /pips;
@@ -215,18 +234,18 @@ void HAL::Deal(long dir, bool pyramiding)     // eliminado ratio, necesidad de d
               
              lot = lot - PositionGetDouble(POSITION_VOLUME);
               double totalVolumen   =  (PositionGetDouble(POSITION_VOLUME) + lot ) ;           
-             printf(__FUNCTION__+ " Posicionamos con un stop de  " + pips/10  + " pips. Volumen de deal " +lot+ " totalVolumen : "+totalVolumen+" Risk : "  + pips* lot );
+             printf(__FUNCTION__+ " Posicionamos con un stop de  " + pips/10  + " pips. Volumen de deal " +lot+ " totalVolumen : "+totalVolumen+" Risk : "  + pips* totalVolumen );
                
-                  rm.DealOpen(dir,lot,pips/10,tp);
+             rm.DealOpen(dir,lot,pips/10,tp);
    }
    
    else
    {
-          double pips=   rm.getPips();
-            pips = pips * vol/10; // multiplicamos x 6
-            double lot = Risk /pips ;
-     printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot);
-            rm.DealOpen(dir,lot, pips, tp);
+     
+            pips = pips * vol; // multiplicamos x 6
+            double lot = risk /pips ;
+            printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot);
+            rm.DealOpen(dir,lot, pips/10, tp);
     }
  }   
     
