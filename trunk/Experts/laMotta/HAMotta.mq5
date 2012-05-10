@@ -262,7 +262,7 @@ double risk = rm.m_account.FreeMargin()*Risk;
    {
       
           pips = pips * volP ; // pongo un stop de 3/2 del ATR
-          double riesgo = risk * (6 - HistoryOrdersTotal() ) ;
+          double riesgo = risk * (12 - HistoryOrdersTotal() ) ;
            
            
              double lot =(riesgo + PositionGetDouble(POSITION_PROFIT)) /pips;

@@ -25,7 +25,7 @@ input ENUM_TIMEFRAMES period = PERIOD_H1;
 input double volP = 15; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
 input double risk = 0.15; // cantidad de la cuenta
-input int MaxNOrders = 2;
+input int MaxNOrders = 3;
 
 
 class LaMotta   

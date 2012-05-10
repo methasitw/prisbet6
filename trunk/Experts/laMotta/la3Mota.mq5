@@ -13,7 +13,7 @@ input double deviation     = 2.33;          // Standard deviation  // 2.33
 
 //---indicator parameters pyr 
 input int bands_periodPyr= 25;            // Bollinger Bands period PYR
-input int bands_periodThirdPyr= 85;            // Bollinger Bands period PYR
+input int bands_periodThirdPyr= 60;            // Bollinger Bands period PYR
 
 input int InpFastEMA       = 12;              // InpFastEMA LaMotta
 input int InpSlowEMA       = 25 ;            // InpSlowEMA LaMotta

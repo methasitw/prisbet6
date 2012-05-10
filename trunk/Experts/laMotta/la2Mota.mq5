@@ -146,7 +146,7 @@ bool LaMotta::Main()
   {
            
              if(dir!=CheckSignal(dir)) return;// if there is no signal for current direction
-                 if(dir!=CheckFilter(dir)) return;// if there is no signal for current direction     
+           //      if(dir!=CheckFilter(dir)) return;// if there is no signal for current direction     
                 printf(__FUNCTION__+ " ### EMA cruzada   ### "  );      
                   Deal(dir, 0,false);
                 
