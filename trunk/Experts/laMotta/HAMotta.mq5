@@ -24,7 +24,7 @@ input ENUM_TIMEFRAMES period = PERIOD_H1;
 // risk management
 input double volP = 15; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
-input double risk = 0.15; // cantidad de la cuenta
+input double Risk = 0.02; // cantidad de la cuenta
 input int MaxNOrders = 3;
 
 
@@ -250,41 +250,39 @@ long LaMotta::CheckFilter(long dir)
 //------------------------------------------------------------------ 
 void LaMotta::Deal(long dir, int order,bool pyramiding)     // eliminado ratio, necesidad de dos deal diferentes para pir y para entrada inciial ¿?
 {
- double Risk = rm.m_account.FreeMargin()*risk;
+
  
+double risk = rm.m_account.FreeMargin()*Risk;
+
+   if (risk > 250)
+      risk = 250;
+      
+   double pips=rm.getPips();  
    if (pyramiding == true)           //piramida
    {
-    double pips= rm.getPips();
-    pips = pips * volP ; // pongo un stop de 3/2 del ATR
-    double riesgo = Risk*2;
-    double lot =(riesgo + PositionGetDouble(POSITION_PROFIT)) /pips;
+      
+          pips = pips * volP ; // pongo un stop de 3/2 del ATR
+          double riesgo = risk * (6 - HistoryOrdersTotal() ) ;
+           
+           
+             double lot =(riesgo + PositionGetDouble(POSITION_PROFIT)) /pips;
              
-    printf(__FUNCTION__+ " riesgo:  " + riesgo  + " pips " +pips+ " POSITION_PROFIT " + PositionGetDouble(POSITION_PROFIT));
+              printf(__FUNCTION__+ " riesgo:  " + riesgo  + " pips " +pips+ " POSITION_PROFIT " + PositionGetDouble(POSITION_PROFIT));
               
-    lot = lot - PositionGetDouble(POSITION_VOLUME);
-             
-    if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )	      lot = 14.9 -  PositionGetDouble(POSITION_VOLUME);
-    if ( lot   > 5.0 )    											  lot = 5.0;
-          
-    double totalVolumen   =  (PositionGetDouble(POSITION_VOLUME) + lot ) ;           
-    printf(__FUNCTION__+ " Posicionamos con un stop de  " + pips/10  + " pips. Volumen de deal " +lot+ " totalVolumen : "+totalVolumen+" Risk : "  + pips* lot );
+             lot = lot - PositionGetDouble(POSITION_VOLUME);
+              double totalVolumen   =  (PositionGetDouble(POSITION_VOLUME) + lot ) ;           
+             printf(__FUNCTION__+ " Posicionamos con un stop de  " + pips/10  + " pips. Volumen de deal " +lot+ " totalVolumen : "+totalVolumen+" Risk : "  + pips* totalVolumen );
                
-    rm.DealOpen(dir,lot,pips/10,tp);
+             rm.DealOpen(dir,lot,pips/10,tp);
    }
    
    else
-   {    
-          if ( !getMaxNumerOrders(dir)) return;
-            double pips=   rm.getPips();
-            pips = pips * vol; 
-            double lot = Risk /pips ;
-            
-              if ( lot   > 5.0 )
-                      lot = lot = 5.0;
-                      
-            printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips/10  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot);
+   {
+     
+            pips = pips * vol; // multiplicamos x 6
+            double lot = risk /pips ;
+            printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot);
             rm.DealOpen(dir,lot, pips/10, tp);
-            
     }
  }   
  /*

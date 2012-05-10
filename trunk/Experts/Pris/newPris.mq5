@@ -8,7 +8,7 @@
 
 #include <IAMotta\RiskManagement.mqh>
                                 
-input int    TakeProfit   = 1500; 		     // Take Profit distance solo se ejecuta si el volumen es menor q PeakVolumen              
+input int    TakeProfit   = 1200; 		     // Take Profit distance solo se ejecuta si el volumen es menor q PeakVolumen              
 
 
 
@@ -23,26 +23,12 @@ input int InpSlowEMA       = 25 ;            // InpSlowEMA Pris
 input int  InpSlowestEMA   = 850;            // InpSlowestEMA Pris
    
    
-input ENUM_TIMEFRAMES period = PERIOD_H1;
+input ENUM_TIMEFRAMES period = PERIOD_H4;
+input ENUM_TIMEFRAMES periodEMA = PERIOD_M6;
 
-
-
-
-
-
-
-// risk management
-
-
-
-
-
-
-
-
-input double volP = 15; // volatilidad que arriesgamos en la entrada
+input double volP = 20; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
-input double risk = 0.15; // cantidad de la cuenta
+input double risk = 0.05; // cantidad de la cuenta
 input int MaxNOrders = 3;
 
 
@@ -50,46 +36,38 @@ class Pris
 
   {
 protected:
-   double          sl, tp ;         
-   int             m_pMA;                           // MA period
+   double    sl, tp ;         
+   int       m_pMA;                                    // MA period
 
+   int       Bands_handle_PYR, Bands_handle, EMAFastMaHandle, EMASlowMaHandle , EMASlowestMaHandle;           
 
-   int             Bands_handle_PYR, Bands_handle, EMAFastMaHandle, EMASlowMaHandle , EMASlowestMaHandle;           
-
-   double      	   FastEma[],SlowEma[] , SlowestEma[];			// EMA lines
-   string          m_smb; ENUM_TIMEFRAMES m_tf ; 
+   double    FastEma[],SlowEma[] , SlowestEma[];			// EMA lines
+   string    m_smb; ENUM_TIMEFRAMES m_tf ; 
 
    RiskManagement rm;
-   double      	  Base[], Upper[],  Lower[];     //  BASE_LINE, UPPER_BAND and LOWER_BAND  of iBands
-   int            MaxNumberOrders  ; 
-
-
+   double    Base[], Upper[],  Lower[];                  //  BASE_LINE, UPPER_BAND and LOWER_BAND  of iBands
+   int       MaxNumberOrders  ; 
 
 public:
-	void        Pris();
-
-	void       ~Pris();
-	
-	 bool      Init(string smb,ENUM_TIMEFRAMES tf); // initialization
-	 bool      Main();                              // main function
-	 
-	void      OpenPosition(long dir);              // open position on signal
+	void       Pris();
+	void      ~Pris();
+	bool      Init(string smb,ENUM_TIMEFRAMES tf);               // initialization
+	bool      Main();                                          // main function
+	void      OpenPosition(long dir);                        // open position on signal
 	void      ClosePosition(long dir) ;
 	void      PyrPosition() ;
 	long      CheckSignal(long type, bool bEntry);            // check signal
 	long      CheckFilter(long type);  
 	void      Deal(long type, int order,bool pyr); 
 	long      LastClosePrice(int dir);
-   long       CheckSignalClose(long dir, bool bEntry);
+   long      CheckSignalClose(long dir, bool bEntry);
    bool      getMaxNumerOrders(long dir);
 	
 	// to piramiding
 	 long      	   CheckSignalPyr(long type, bool bEntry);            // check signal
-
 	 long     	   CheckFilterPyr(long type);  
     long          CheckDistance(long type, bool bEntry);
     double        LastDealOpenPrice();
-    
    
   };
 //------------------------------------------------------------------	Pris
@@ -115,19 +93,13 @@ bool Pris::Init(string smb,ENUM_TIMEFRAMES tf)
 
 	if (!rm.Init(0,m_smb,tf)) return(false);  // initialize object RiskManagement
 
-
-
-
-	tp=TakeProfit;   sl=-1; 
-	MaxNumberOrders = 0;
-    m_pMA = bands_period;
-   	//--- creation of the indicator iBands
+	tp=TakeProfit;   sl=-1; 	MaxNumberOrders = 0;    m_pMA = bands_period;
+   	
+   //--- creation of the indicator iBands
 	Bands_handle=iBands(_Symbol,period,bands_period,0,deviation,PRICE_CLOSE);
 	Bands_handle_PYR=iBands(_Symbol,period,bands_periodPyr,0,deviation,PRICE_CLOSE);
-	
-   	
-	EMAFastMaHandle=iMA(_Symbol,period,InpFastEMA,0,MODE_SMMA,PRICE_CLOSE);
-	EMASlowMaHandle=iMA(_Symbol,period,InpSlowEMA,0,MODE_SMMA,PRICE_CLOSE);
+	EMAFastMaHandle=iMA(_Symbol,periodEMA,InpFastEMA,0,MODE_SMMA,PRICE_CLOSE);
+	EMASlowMaHandle=iMA(_Symbol,periodEMA,InpSlowEMA,0,MODE_SMMA,PRICE_CLOSE);
 	EMASlowestMaHandle=iMA(_Symbol,period,InpSlowestEMA,0,MODE_SMMA,PRICE_CLOSE);
    		  
 	//--- report if there was an error in object creation
@@ -145,14 +117,10 @@ bool Pris::Init(string smb,ENUM_TIMEFRAMES tf)
 bool Pris::Main()
   {
 
-
  	   if(!rm.Main()) return(false); // call function of parent class
 	   if(Bars(m_smb,m_tf)<=m_pMA) return(false); // if there are insufficient number of bars
-
-
 	   if (rm.m_account.FreeMargin()<2000) return false;
-
-	 
+ 
 	 if(!PositionSelect(m_smb)) 
 	 {
 	   OpenPosition(ORDER_TYPE_SELL); 
@@ -165,15 +133,12 @@ bool Pris::Main()
 			HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));   
 				if(  HistoryOrdersTotal()  < MaxNumberOrders  )
 				{
-					 
 					  PyrPosition(); 
-				 }
+				}
 				 else{
 				  ClosePosition(PositionGetInteger(POSITION_TYPE));
 				 }
 		}		 
-
-
 	   return(true);
   }
 
@@ -182,63 +147,33 @@ bool Pris::Main()
 //------------------------------------------------------------------
   void Pris::OpenPosition(long dir)
   {
-           
-             if(dir!=CheckSignal(dir)) return;// if there is no signal for current direction
+             if(dir!=CheckSignal(dir, true)) return;// if there is no signal for current direction
                  if(dir!=CheckFilter(dir)) return;// if there is no signal for current direction     
                 printf(__FUNCTION__+ " ### EMA cruzada   ### "  );      
-                  Deal(dir, 0,false);
-                
-                }
+                  Deal(dir, 0,false);  
+     }
  
  //------------------------------------------------------------------	
 // Open Position
 //------------------------------------------------------------------
   void Pris::PyrPosition()
   { 
-                                                                   
-
-
-
-
-
-
                         if(PositionGetInteger(POSITION_TYPE)!=CheckSignalPyr(PositionGetInteger(POSITION_TYPE), true)) return;
                                printf("                       * piramida *  " );
                                printf(__FUNCTION__+ " Dispersion BB 20 tocada . Deal numero: " + HistoryOrdersTotal() );
-                              
-
-
-
-
                   	   Deal(PositionGetInteger(POSITION_TYPE), HistoryOrdersTotal(),true);                 	   
                         return ;
-
-
-
-
-
-
-
-
-
   }
 
-  
-  
+
  //------------------------------------------------------------------	
 // Close Position if the price touch the bollinger bands an the volumen is more than PeakVolumen
 //------------------------------------------------------------------ 
   void Pris::ClosePosition(long dir)
   {       
-
-
-
-
       if(dir!=CheckSignalClose(dir, false)) return;
 
-
-
-         printf(__FUNCTION__+ "MaxNumberOrders " +MaxNumberOrders+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
+        printf(__FUNCTION__+ "MaxNumberOrders " +MaxNumberOrders+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
          printf(__FUNCTION__+ "HistoryOrdersTotal " +HistoryOrdersTotal()+ "POSITION CERRADA: ACCOUNT_BALANCE: "  + AccountInfoDouble(ACCOUNT_BALANCE) +" ACCOUNT_EQUITY: "  + AccountInfoDouble(ACCOUNT_EQUITY));
          rm.m_trade.PositionClose(m_smb,1);
 
@@ -353,7 +288,8 @@ void Pris::Deal(long dir, int order,bool pyramiding)     // eliminado ratio, nec
             rm.DealOpen(dir,lot, pips/10, tp);
             
     }
- }   
+ } 
+  
  /*
  -------------------------FUNCIONES PIRAMIDACION --------------------------
  */

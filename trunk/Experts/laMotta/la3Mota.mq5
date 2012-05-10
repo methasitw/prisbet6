@@ -5,7 +5,7 @@
 
 #include <IAMotta\RiskManagement.mqh>
                                 
-input int    TakeProfit   = 1500; 		     // Take Profit distance solo se ejecuta si el volumen es menor q PeakVolumen              
+input int    TakeProfit   = 1200; 		     // Take Profit distance solo se ejecuta si el volumen es menor q PeakVolumen              
 
 
 input int bands_period     = 90;            // Bollinger Bands period
