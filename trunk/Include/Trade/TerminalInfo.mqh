@@ -23,7 +23,7 @@ public:
    bool              IsFtpEnabled(void)          const;
    int               MaxBars(void)               const;
    int               CodePage(void)              const;
-   int               CPUCount(void)              const;
+   int               CPUCores(void)              const;
    int               MemoryPhysical(void)        const;
    int               MemoryTotal(void)           const;
    int               MemoryAvailable(void)       const;
@@ -111,11 +111,11 @@ int CTerminalInfo::CodePage(void) const
    return((int)TerminalInfoInteger(TERMINAL_CODEPAGE));
   }
 //+------------------------------------------------------------------+
-//| Get the property value "TERMINAL_CPU_COUNT".                     |
+//| Get the property value "TERMINAL_CPU_CORES".                     |
 //+------------------------------------------------------------------+
-int CTerminalInfo::CPUCount(void) const
+int CTerminalInfo::CPUCores(void) const
   {
-   return((int)TerminalInfoInteger(TERMINAL_CPU_COUNT));
+   return((int)TerminalInfoInteger(TERMINAL_CPU_CORES));
   }
 //+------------------------------------------------------------------+
 //| Get the property value "TERMINAL_MEMORY_PHYSICAL".               |

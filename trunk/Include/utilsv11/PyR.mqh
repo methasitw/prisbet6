@@ -14,14 +14,7 @@
 
 #include <utilsv11\RiskManagement.mqh>
 
-  input ENUM_TIMEFRAMES periodEMAPyr = PERIOD_M10;
-  input ENUM_TIMEFRAMES periodBBPyr = PERIOD_H4;
-//---indicator parameters
-input int bands_periodPyr= 20;        // Bollinger Bands period PYR
-input int bands_shiftPyr = 0;         // Bollinger Bands shift PYR
-input double deviationPyr= 1.66;         // Standard deviation  PYR // 2.33
-input int InpFastEMAPyr =7;            //InpFastEMA PYR
-input int InpSlowEMAPyr = 12 ;         //InpFastEMA PYR
+
 
 class PyR   
   {

@@ -61,13 +61,13 @@ protected:
    //--- internal event handlers
    virtual bool      OnShow(void);
    virtual bool      OnHide(void);
-   virtual bool      OnChangePos(void)            { return(true);       }
+   virtual bool      OnChangePos(void)             { return(true);       }
    //--- handlers of dragging
    virtual bool      OnThumbDragStart(void)        { return(true);       }
    virtual bool      OnThumbDragProcess(void)      { return(true);       }
    virtual bool      OnThumbDragEnd(void)          { return(true);       }
    //--- calculate position by coordinate
-   virtual int       CalcPos(const int coord)     { return(0);          }
+   virtual int       CalcPos(const int coord)      { return(0);          }
   };
 //+------------------------------------------------------------------+
 //| Common handler of chart events                                   |
