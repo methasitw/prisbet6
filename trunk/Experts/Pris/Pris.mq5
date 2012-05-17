@@ -1,259 +1,348 @@
 
+// filtros de volumen intentar quiar entradas falsas. 
+// Reposicionar en base a a BB , partiendo de la base que S volvera a la mediana, o q se acercará.
+// context del sistema en un fichero.
+// ordenes limitadas.
+
+
 #property copyright "hippie Corp."
 #property link      "http://www.mql5.com"
 #property version   "1.00"
 
-
-#include <utilsp0\RiskManagement.mqh>
-
-input double Percent      = 8;                 // el stop loose se calcula con el 0.08% de variacion del precio.
-input double Risk         = 9;                 // apostamos 90 euros x entrada
-input int    TakeProfit   = 1500; 		        // Take Profit distance solo se ejecuta si el volumen es menor q PeakVolumen
-input int    PeakVolumen  = 12;              // Volumen considerado suficientemente grande como para cerrar una entrada si toca la dispersion contraria a su movimiento
-input int MaxNumberOrders = 5 ;                // numero de ordenes maxima que pertenece a una posicion
-
-//---indicator parameters
+#include <utilsPrisBet6\RiskManagement.mqh>
+                                
+input int    TakeProfit   = 1200;         	  // Take Profit               
 input int bands_period     = 90;             // Bollinger Bands period
-input int bands_shift      = 0;              // Bollinger Bands shift
-input double deviation     = 2.333;          // Standard deviation  // 2.33
-input int InpFastEMA       = 7;              // InpFastEMA Pris
-input int InpSlowEMA       = 12 ;            // InpSlowEMA Pris
+input double deviation     = 2.33;          // Standard deviation  // 2.33
+
+//---indicator parameters pyr
+input int bands_periodPyr= 25;            		// Bollinger Bands period PYR
+input int InpFastEMA       = 12;               // InpFastEMA Pris
+input int InpSlowEMA       = 25 ;             // InpSlowEMA Pris
+input int  InpSlowestEMA   = 850;            // InpSlowestEMA Pris
    
+ 
+input ENUM_TIMEFRAMES period = PERIOD_H4;
+input ENUM_TIMEFRAMES periodPyr = PERIOD_H2;
+input ENUM_TIMEFRAMES periodEMA = PERIOD_H1;
 
-input ENUM_TIMEFRAMES periodEMA = PERIOD_M6;
-input ENUM_TIMEFRAMES periodBB = PERIOD_H4;
 
-//---indicator parameters pyr 
-input int bands_periodPyr= 25;            // Bollinger Bands period PYR
-input double deviationPyr= 1.8;           // Standard deviation  PYR // 2.33
+// risk management
+input double volP = 15; // volatilidad que arriesgamos en la entrada
+input double vol = 6;
+input double risk = 0.15; // cantidad de la cuenta
+input int MaxNOrders = 4; // tres piramidaciones
 
 
 class Pris   
   {
 protected:
-   double            sl, tp ;         
-   int               m_pMA;                           // MA period
-   int               Bands_handle_PYR, Bands_handle, EMAFastMaHandle, EMASlowMaHandle ;           
-   double      		Base[], Upper[],  Lower[];     //  BASE_LINE, UPPER_BAND and LOWER_BAND  of iBands
-   double      		FastEma[],SlowEma[] ;			// EMA lines
-   string            m_smb; ENUM_TIMEFRAMES m_tf ; 
-   RiskManagement rm;
+	double          sl, tp ;         
+	int             m_pMA;                           			// MA period
+	int             Bands_handle_PYR, Bands_handle, EMAFastMaHandle, EMASlowMaHandle , EMASlowestMaHandle;           
+	double          FastEma[],SlowEma[] , SlowestEma[];      // EMA lines
+	string          m_smb; ENUM_TIMEFRAMES m_tf ;
+	RiskManagement 	rm;
+	double       	Base[], Upper[],  Lower[];    		 	//  BASE_LINE, UPPER_BAND and LOWER_BAND  of iBands
+	int          	MaxNumberOrders  ;
+	public:	
+	void     		~Pris();
+		
+	bool    		 Init(string smb,ENUM_TIMEFRAMES tf); 		// initialization
+	bool    		 Main();                              		// main function
+		
+	void     		OpenPosition(long dir);              		// open position on signal
+	void     		ClosePosition(long dir) ;
+	void     		PyrPosition() ;
+	long     		CheckSignal(long type, bool bEntry);          // check signal
+	long     		CheckFilter(long type);  						// no está implementado
 
-
-public:
-	void              Pris();
-	void             ~Pris();
-	
-	 bool      Init(string smb,ENUM_TIMEFRAMES tf); // initialization
-	 bool      Main();                              // main function
-	 
-	 void      OpenPosition(long dir);              // open position on signal
-	 void      ClosePosition(long dir) ;
-	 long      CheckSignal(long type, bool bEntry);            // check signal
-	 long      CheckFilter(long type);  
-	 void      Deal(long type, int order,bool pyr); 
-	
+	void     		Deal(long type, int order,bool pyr);
+	long     		LastClosePrice(int dir);
+	bool    		getMaxNumerOrders(long dir);
 	
 	// to piramiding
-	 long      	   CheckSignalPyr(long type, bool bEntry);            // check signal
-	 long     	   CheckFilterPyr(long type);  
-    long          CheckDistance(long type, bool bEntry);
-    double        LastDealOpenPrice();
-    double        getTPByRisk(long dir, double lot);
-	
+	long          	CheckSignalPyr(long type, bool bEntry);            // check signal
+	long          	CheckFilterPyr(long type);  
+	long          	CheckDistance(long type, bool bEntry);
+	double        	LastDealOpenPrice();
+    
+   
   };
-//------------------------------------------------------------------	Pris
-void Pris::Pris() { }
-//------------------------------------------------------------------	~Pris
+  
+//------------------------------------------------------------------  Pris
+// delete indicators
+//------------------------------------------------------------------  ~Pris
 void Pris::~Pris()
   {
-   IndicatorRelease(Bands_handle); // delete indicators
-   IndicatorRelease(EMAFastMaHandle); 
-   IndicatorRelease(EMASlowMaHandle); 
+   IndicatorRelease(Bands_handle); 		
+   IndicatorRelease(EMAFastMaHandle);
+   IndicatorRelease(EMASlowMaHandle);
    IndicatorRelease(Bands_handle_PYR);  
   }
-//------------------------------------------------------------------	
+  
+//------------------------------------------------------------------  
 //    Init
-//------------------------------------------------------------------	
+//------------------------------------------------------------------  
 bool Pris::Init(string smb,ENUM_TIMEFRAMES tf)
   {
-	 
-	 m_smb=smb ; m_tf=tf ; 
-	if (!rm.Init(0,m_smb,tf)) return(false);  // initialize object RiskManagement
+    printf(__FUNCTION__+ " ### start ### "  );
+   m_smb=smb ; m_tf=tf ;
+  if (!rm.Init(0,m_smb,tf)) return(false);  // initialize object RiskManagement
 
-	      tp=TakeProfit;   sl=-1;
+  tp=TakeProfit;   sl=-1;
+  MaxNumberOrders = 0;
+    m_pMA = bands_period;
+     //--- creation of the indicator iBands
+  Bands_handle=iBands(_Symbol,period,bands_period,0,deviation,PRICE_CLOSE);
+  Bands_handle_PYR=iBands(_Symbol,periodPyr,bands_periodPyr,0,deviation,PRICE_CLOSE);
+  
+  EMAFastMaHandle=iMA(_Symbol,periodEMA,InpFastEMA,0,MODE_SMMA,PRICE_CLOSE);
+  EMASlowMaHandle=iMA(_Symbol,periodEMA,InpSlowEMA,0,MODE_SMMA,PRICE_CLOSE);
+  EMASlowestMaHandle=iMA(_Symbol,period,InpSlowestEMA,0,MODE_SMMA,PRICE_CLOSE);
 
-   	//--- creation of the indicator iBands
-   	   Bands_handle=iBands(NULL,periodBB,bands_period,bands_shift,deviation,PRICE_CLOSE);
-   	   Bands_handle_PYR=iBands(NULL,periodBB,bands_periodPyr,bands_shift,deviationPyr,PRICE_CLOSE);
-   	   EMAFastMaHandle=iMA(NULL,periodEMA,InpFastEMA,0,MODE_EMA,PRICE_CLOSE);
-   	   EMASlowMaHandle=iMA(NULL,periodEMA,InpSlowEMA,0,MODE_EMA,PRICE_CLOSE);
-   		  
-	//--- report if there was an error in object creation
-	   if(Bands_handle<0 || EMAFastMaHandle < 0 || EMASlowMaHandle < 0 || Bands_handle_PYR <0 )
-		 {
-		  printf(__FUNCTION__+"The creation of indicator has failed: Runtime error = " + GetLastError());
-		  return(-1);
-		 }
-
-	   return(true);                         // "trade allowed"
+  //--- report if there was an error in object creation
+     if(Bands_handle<0 || EMAFastMaHandle < 0 || EMASlowMaHandle < 0 || Bands_handle_PYR <0 || EMASlowestMaHandle < 0 )
+     {
+		printf(__FUNCTION__+"The creation of indicator has failed: Runtime error = " + GetLastError());
+		return(-1);
+     }
+     return(true); 
   }
-//------------------------------------------------------------------	
-//    Mainfunction
-//------------------------------------------------------------------	
+  
+//------------------------------------------------------------------  
+// Main function
+//------------------------------------------------------------------  
 bool Pris::Main()
   {
- 
-	   if(!rm.Main()) return(false); // call function of parent class
-	   
-	   if(Bars(m_smb,m_tf)<=m_pMA) return(false); // if there are insufficient number of bars
-  
-	   long dir;
-	   if (rm.m_account.FreeMargin()<3000) return false;
-	   dir=ORDER_TYPE_SELL;  OpenPosition(dir); ClosePosition(dir); // rm.TrailingPosition(dir,ts);
-	   dir=ORDER_TYPE_BUY;   OpenPosition(dir);  ClosePosition(dir); // rm.TrailingPosition(dir,ts);
-	   
-	   return(true);
+    if(!rm.Main()) return(false); // call function of parent class
+    if(Bars(m_smb,m_tf)<=m_pMA) return(false); // if there are insufficient number of bars
+    if (rm.m_account.FreeMargin()<2000) return false;
+   
+   if(!PositionSelect(m_smb))
+   {
+    OpenPosition(ORDER_TYPE_SELL);
+    OpenPosition(ORDER_TYPE_BUY);
+   }
+    else
+   {
+      if(PositionGetInteger(POSITION_TYPE)!= CheckDistance(PositionGetInteger(POSITION_TYPE), true  )) return false;
+      
+      HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));   
+        if(  HistoryOrdersTotal()  < MaxNumberOrders  )
+        {
+            PyrPosition();
+        }
+         else{
+          ClosePosition(PositionGetInteger(POSITION_TYPE));
+        }
+    }     
+     return(true);
   }
 
-//------------------------------------------------------------------	
+//------------------------------------------------------------------  
 // Open Position
 //------------------------------------------------------------------
   void Pris::OpenPosition(long dir)
   {
-// if there is an order, try to pyr
- HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));
-  if( PositionSelect(m_smb) && ( HistoryOrdersTotal()  < MaxNumberOrders)  )
-                     {                    
-                        if(PositionGetInteger(POSITION_TYPE)!= CheckDistance(PositionGetInteger(POSITION_TYPE), true  )) return;
-                                
-                        if(PositionGetInteger(POSITION_TYPE)!=CheckSignalPyr(PositionGetInteger(POSITION_TYPE), true)) return;
-                              printf("                       * piramida *  " );
-                              printf(__FUNCTION__+ " Precio recorre la distacia adecuada" );
-                              printf(__FUNCTION__+ " Dispersion Positiva tocada piramidacion. Deal numero: " + HistoryOrdersTotal() );
-                              
-                  	   Deal(PositionGetInteger(POSITION_TYPE), HistoryOrdersTotal(),true);                 	   
-                        return ;
-                     }
-
-    if(PositionSelect(m_smb)) return; 
-    
-         if(dir!=CheckSignal(dir, true)) return;// if there is no signal for current direction
-         if(dir!=CheckFilter(dir))return;
-          
-           if(dir!=rm.marginPerformance(dir))return; // El Precio no está en un MAX / MIN absoluto  ###
-            printf(__FUNCTION__+ " ### EMA cruzada  y BB fuera de dispersion ### dir" + dir );      
-            Deal(dir, 0,false);
-  }
- //------------------------------------------------------------------	
-// Close Position if the price touch the bollinger bands an the volumen is more than PeakVolumen
-//------------------------------------------------------------------ 
-  void Pris::ClosePosition(long dir)
+             if(dir!=CheckSignal(dir,true)) return;// if there is no signal for current direction
+                 if(dir!=CheckFilter(dir)) return;// if there is no signal for current direction     
+                printf(__FUNCTION__+ " ### EMA cruzada   ### "  );      
+                  Deal(dir, 0,false);
+    }
+ 
+//------------------------------------------------------------------  
+// Pyr Open Position
+//------------------------------------------------------------------
+  void Pris::PyrPosition()
   {
-         if(dir!=PositionGetInteger(POSITION_TYPE)) return;
-         if(dir!=CheckSignal(dir, false)) return;
-
-   if(PositionSelect(m_smb))
-      if( PositionGetDouble(POSITION_VOLUME) > PeakVolumen) //PositionGetDouble(POSITION_PROFIT)>PositionGetDouble(POSITION_VOLUME)*AccountInfoDouble(ACCOUNT_BALANCE) &&
-      {     
-         printf(__FUNCTION__+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
-         printf(__FUNCTION__+ "POSITION CERRADA: ACCOUNT_BALANCE: "  + AccountInfoDouble(ACCOUNT_BALANCE) +" ACCOUNT_EQUITY: "  + AccountInfoDouble(ACCOUNT_EQUITY));
-         rm.m_trade.PositionClose(m_smb,1);
-      }
+    if(PositionGetInteger(POSITION_TYPE)!=CheckSignalPyr(PositionGetInteger(POSITION_TYPE), true)) return;
+    printf("                       * piramida *  " );
+    printf(__FUNCTION__+ " Dispersion BB 20 tocada . Deal numero: " + HistoryOrdersTotal() );
+    Deal(PositionGetInteger(POSITION_TYPE), HistoryOrdersTotal(),true);                      
+    return ;
   }
 
-//------------------------------------------------------------------	
-// Check Signal
-//------------------------------------------------------------------ 
-long Pris::CheckSignal(long type, bool bEntry)
+//------------------------------------------------------------------  
+// Open BB 90 / 2.33 4H
+//------------------------------------------------------------------
+long Pris::CheckSignal(long dir, bool bEntry)
   {  
       if(!GetBandsBuffers(Bands_handle,0,90,Base,Upper,Lower,true)) return (-1);          
-          if( rm.ea.BasePrice( type) < Lower[0]   )
+          if( rm.ea.BasePrice( dir) < Lower[0]   )
                {  
-                //    printf(__FUNCTION__+ " Dispersion negativa tocada x S    ORDER_TYPE_BUY  Upper: " + Lower[0]  + " Ask: " + rm.ea.BasePrice( type) );
+               printf(__FUNCTION__+ " Dispersion negativa tocada x S    ORDER_TYPE_BUY  Lower: " + NormalizeDouble(Lower[0],5)  + " Ask: " +NormalizeDouble(rm.ea.BasePrice(dir),5));
                      return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL);
                }
-          else  if(  rm.ea.BasePrice( type)  > Upper[0])
+          else  if(  rm.ea.BasePrice( dir)  > Upper[0])
                    {  
-                //      printf(__FUNCTION__+ " Dispersion Positivatocada x S    ORDER_TYPE_SELL      Upper: " + Lower[0]+ " Bid: "  + rm.ea.BasePrice( type));
-                        return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for buy
+					 printf(__FUNCTION__+ " Dispersion Positivatocada x S    ORDER_TYPE_SELL      Upper: " +  NormalizeDouble(Upper[0],5)+ " Bid: "  + NormalizeDouble(rm.ea.BasePrice(dir),5) );
+                       return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for buy
                    }
    return(WRONG_VALUE);
   }
 
-//------------------------------------------------------------------	
-// Check Filter
-//------------------------------------------------------------------ 
-long Pris::CheckFilter(long type)
-{   
-   if(!CopyBufferAsSeries(EMAFastMaHandle,0,0,20,true,FastEma)) return(false);
-   if(!CopyBufferAsSeries(EMASlowMaHandle,0,0,20,true,SlowEma)) return(false);
 
-  if(type == ORDER_TYPE_BUY && FastEma[0] > SlowEma[0]) // cambiado
+//------------------------------------------------------------------  
+// Check Filter xema 12/25	1H
+//------------------------------------------------------------------
+long Pris::CheckFilter(long dir)
+{   
+   if(!CopyBufferAsSeries(EMAFastMaHandle,0,0,InpFastEMA,true,FastEma)) return(false);
+   if(!CopyBufferAsSeries(EMASlowMaHandle,0,0,InpSlowEMA,true,SlowEma)) return(false);
+
+  if(dir == ORDER_TYPE_BUY && FastEma[0] > SlowEma[0]) // cambiado
    
    {         
- //  printf(__FUNCTION__+ " Ema Cruzada: to buy "  + rm.ea.BasePrice( type) );
+  printf(__FUNCTION__+ " Ema Cruzada: to buy "  + NormalizeDouble(rm.ea.BasePrice( dir),5)  );
     return(ORDER_TYPE_BUY);    }
 
- else if(type == ORDER_TYPE_SELL && FastEma[0] < SlowEma[0])
+ else if(dir == ORDER_TYPE_SELL && FastEma[0] < SlowEma[0])
     {         
- //    printf(__FUNCTION__+ " Ema Cruzada: to sell "  + rm.ea.BasePrice( type) );
+    printf(__FUNCTION__+ " Ema Cruzada: to sell "  + NormalizeDouble(rm.ea.BasePrice( dir),5) );
      return(ORDER_TYPE_SELL);   }
    return(WRONG_VALUE);
 }
   
 
-//------------------------------------------------------------------	
-// Deal
-//------------------------------------------------------------------ 
-void Pris::Deal(long dir, int order,bool pyramiding)     // eliminado ratio, necesidad de dos deal diferentes para pir y para entrada inciial ¿?
+//------------------------------------------------------------------  
+// lot = Risk /pips 
+//------------------------------------------------------------------
+void Pris::Deal(long dir, int order,bool pyramiding)
 {
-   if (pyramiding == true)           //piramida
+ double Risk = rm.m_account.FreeMargin()*risk;
+ if (pyramiding == true)           //piramida
    {
-     //double lot=rm.getLotN();    
-      double lot = order +2 ;
-      sl =  rm.getStopByRisk(dir, lot);
-      if (lot+PositionGetDouble(POSITION_VOLUME) > PeakVolumen) 
-         tp =  getTPByRisk(dir, lot);
-       printf(__FUNCTION__+ " posicionamos con un stop de  " + sl  + " puntos. Volumen de " +lot+ " Risk de: "  + sl*lot*10 );
-       rm.DealOpen(dir,lot,sl,tp, true);
+    double pips= rm.getPips();
+    pips = pips * volP ; 		// pongo un stop de 3/2 del ATR
+    double riesgo = Risk*2;		// el riesgo aquí es muy alto, pero necesario para ganar el concurso.
+								// cuanto riesgo de la cuenta estamos apostando aquí exactamente si podemos piramidar 3 vecse. ¿?
+    double lot =((riesgo + PositionGetDouble(POSITION_PROFIT)) /pips)  - PositionGetDouble(POSITION_VOLUME);
+    
+    if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )        lot = 14.9 -  PositionGetDouble(POSITION_VOLUME);
+    if ( lot   > 5.0 )    lot = 5.0;
+
+    double totalVolumen   =  (PositionGetDouble(POSITION_VOLUME) + lot ) ;           
+    printf(__FUNCTION__+ " Posicionamos con un stop de  " + pips/10 + " pips. Volumen de deal " +lot+ " totalVolumen : "+totalVolumen+" Risk : "  + pips* lot );
+    printf(__FUNCTION__+ " Riesgo:  " + riesgo  + " pips " +pips/10 + " POSITION_PROFIT " + PositionGetDouble(POSITION_PROFIT));              
+    
+	rm.DealOpen(dir,lot,pips/10,tp);	
    }
-   
    else
-   {
-       sl =  rm.getStopByPercent(dir,Percent);  // el numero de puntos es siempre un 8% de los 5 ultimos dígitos de la divisa
-       double lot=Risk/sl;      
-      printf(__FUNCTION__+ " Abrimos posicion con un stop de  " + sl  + " puntos. Volumen de " +lot+ " Risk de: "  + sl*lot*10 );
-          rm.DealOpen(dir,lot, sl, tp, false);
+   {    
+    if ( !getMaxNumerOrders(dir)) return;
+		double pips=   rm.getPips();
+		pips = pips * vol;
+		double lot = Risk /pips ;
+    if ( lot   > 5.0 )
+        lot = lot = 5.0;
+		printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips/10  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot);
+		rm.DealOpen(dir,lot, pips/10, tp);
     }
  }   
  
+ //------------------------------------------------------------------  
+// Close Position BB 90/2.33 4H  
+//------------------------------------------------------------------
+  void Pris::ClosePosition(long dir)
+  {       
+      if(dir!=CheckSignal(dir, false)) return;
+         printf(__FUNCTION__+ "MaxNumberOrders " +MaxNumberOrders+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
+         printf(__FUNCTION__+ "HistoryOrdersTotal " +HistoryOrdersTotal()+ "POSITION CERRADA: ACCOUNT_BALANCE: "  + AccountInfoDouble(ACCOUNT_BALANCE) +" ACCOUNT_EQUITY: "  + AccountInfoDouble(ACCOUNT_EQUITY));
+         rm.m_trade.PositionClose(m_smb,1);
+  }
+
+ /*	-------------------------FUNCIONES PIRAMIDACION ---------------*/
  
+//------------------------------------------------------------------  
+// Check Signal PYR BB 25 / 2.33 2H
+//------------------------------------------------------------------
+long Pris::CheckSignalPyr(long dir, bool bEntry)
+  {  
+      if(!GetBandsBuffers(Bands_handle_PYR,0,bands_periodPyr,Base,Upper,Lower,true)) return (-1);
+           if( rm.ea.BasePrice( dir) < Lower[0]   )
+               {  
+                     printf(__FUNCTION__+ " Dispersion negativa tocada x S    ORDER_TYPE_BUY  Lower: " + NormalizeDouble(Lower[0],5)  + " Ask: " +NormalizeDouble(rm.ea.BasePrice(dir),5));
+                     return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL);
+               }
+
+          else  if(  rm.ea.BasePrice( dir)  > Upper[0])
+                   {  
+                         printf(__FUNCTION__+ " Dispersion Positiva tocada x S    ORDER_TYPE_SELL      Upper: " +  NormalizeDouble(Upper[0],5)+ " Bid: "  + NormalizeDouble(rm.ea.BasePrice(dir),5) );
+                        return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for buy
+                   }
+
+   return(WRONG_VALUE);
+  }
+  
+
+//------------------------------------------------------------------  
+// calcula el número máximo de ordenes de piramidación.
+// Si todos devuelven true, significa que entrará al mercado buscando piramidar y no piramidar.
+// Si devuleven false cuando  MaxNumberOrders  = 1 significa que el sistema solo piramidará.
+// que ocurre si el programa se para durante el fin de semana  la variable del contexto
+// MaxNumberOrders volvería a ser 1 o 2 
+//------------------------------------------------------------------  
+ bool Pris::getMaxNumerOrders(long dir)
+ {
+ if(!CopyBufferAsSeries(EMASlowestMaHandle,0,0,InpSlowestEMA,true,SlowestEma)) return(false);
+
+ if(dir == ORDER_TYPE_BUY && rm.ea.BasePrice(dir)  > SlowestEma[0])
+   
+   {         
+     printf(__FUNCTION__+ " ORDER_TYPE_buy  MaxNumberOrders = 1 "   );
+     MaxNumberOrders  = 1;
+   return(true);
+  }
+   else if(dir == ORDER_TYPE_BUY && rm.ea.BasePrice(dir)  < SlowestEma[0])
+   
+   {         
+     printf(__FUNCTION__+ "  ORDER_TYPE_BUY MaxNumberOrders =  " + MaxNOrders   );
+     MaxNumberOrders  =  MaxNOrders;
+   return(true);
+   }
+
+	else if(dir == ORDER_TYPE_SELL && rm.ea.BasePrice(dir) < SlowestEma[0])
+    {         
+       printf(__FUNCTION__+ " ORDER_TYPE_SELL MaxNumberOrders   =1 "   );
+      MaxNumberOrders   =1;
+    return(true);
+      }
+   else  if(dir == ORDER_TYPE_SELL && rm.ea.BasePrice(dir) > SlowestEma[0])
+    {         
+       printf(__FUNCTION__+ " ORDER_TYPE_SELL MaxNumberOrders   = "  + MaxNOrders );
+       MaxNumberOrders   = MaxNOrders;
+     return(true);
+   }
+    return(true);
+ }
  
-//------------------------------------------------------------------	
+//------------------------------------------------------------------  
 // calculate the distance necessary to process a new deal
-//------------------------------------------------------------------ 
-  long Pris::CheckDistance(long type, bool bEntry)
+//------------------------------------------------------------------
+  long Pris::CheckDistance(long dir, bool bEntry)
 {   
       double atr,cop,apr;
-         atr = rm.getN();                                                            // numero de points que tiene que distanciarse
-        // cop = rm.ea.NormalDbl(PositionGetDouble(POSITION_PRICE_OPEN));             // precio de apertura de posicion
-         cop = LastDealOpenPrice();
-         apr = rm.ea.BasePrice( type);                                             // precio objetivo actual
+         atr = rm.getN();                       // numero de points que tiene que distanciarse
+		 atr = atr/2;							// reducimos la distancia
+         cop = LastDealOpenPrice();            // precio del último deal
+         apr = rm.ea.BasePrice( dir);          // precio objetivo actual
 
-        if( cop + atr <  rm.ea.BasePrice( type))      
+        if( cop + atr <  rm.ea.BasePrice( dir))      
             {  
+				//printf(__FUNCTION__+ " LastDealOpenPrice  " +cop  + " atr: " +atr+ " BasePrice: "  + NormalizeDouble( rm.ea.BasePrice( dir),4));
                  return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL);
            }
-       else if( cop - atr >  rm.ea.BasePrice( type))
+       else if( cop - atr >  rm.ea.BasePrice( dir))
           {       
+				//printf(__FUNCTION__+ " LastDealOpenPrice  " +cop  + " atr: -" +atr+ " BasePrice: "  + NormalizeDouble(rm.ea.BasePrice( dir),4));
                return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for sell
           }
          return(WRONG_VALUE);
 }
-//------------------------------------------------------------------	
+//------------------------------------------------------------------  
 // Last deal open price to calculate the distance necessary to process a new deal
-//------------------------------------------------------------------ 
+//------------------------------------------------------------------
 double Pris::LastDealOpenPrice()
   {
    uint pos_total=0;
@@ -265,7 +354,6 @@ double Pris::LastDealOpenPrice()
   
    if(pos_total>0)
      {
-
       if(PositionSelect(Symbol())) // continue if open position is for chart symbol and order type
         {
          pos_id=(ENUM_POSITION_PROPERTY_INTEGER)PositionGetInteger(POSITION_IDENTIFIER);
@@ -275,61 +363,26 @@ double Pris::LastDealOpenPrice()
         
          if(HTicket>0)
             price=HistoryDealGetDouble(HTicket,DEAL_PRICE);
-
          return(price);
         }
-
      }
    return(0);
   }
+  
 
-//------------------------------------------------------------------	
-// Check Signal
-//------------------------------------------------------------------ 
-long Pris::CheckSignalPyr(long type, bool bEntry)
-  {  
-      if(!GetBandsBuffers(Bands_handle_PYR,0,bands_periodPyr,Base,Upper,Lower,true)) return (-1);
-           if( rm.ea.BasePrice( ORDER_TYPE_BUY) < Lower[0]   )
-               {  
-                     return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL);
-               }
-
-          else  if(  rm.ea.BasePrice( ORDER_TYPE_SELL)  > Upper[0])
-                   {  
-                        return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for buy
-                   }
-
-   return(WRONG_VALUE);
-  }
-//------------------------------------------------------------------	
-// Calculate take profit when the volumen is more than 10 
-//------------------------------------------------------------------ 
-double Pris::getTPByRisk(long dir, double lot)
-{
-   if(!GetBandsBuffers(Bands_handle,0,90,Base,Upper,Lower,true)) return (-1);
-   
-   double distance = MathAbs(Lower[0] - Upper[0]);
-   double tp = distance * lot/10;
-    printf(__FUNCTION__+"el nuevo take profit es de : " + tp + " distace " + distance );
-    return tp;
-}
-
-
-
-    
-Pris prisEURUSD; // class instance
-//------------------------------------------------------------------	OnInit
+Pris EURUSD; // class instance
+//------------------------------------------------------------------  OnInit
 int OnInit()
   {
-   prisEURUSD.Init(Symbol(),Period()); // initialize expert
+   EURUSD.Init(Symbol(),Period()); // initialize expert
 
    return(0);
   }
-//------------------------------------------------------------------	OnDeinit
+//------------------------------------------------------------------  OnDeinit
 void OnDeinit(const int reason) { }
-//------------------------------------------------------------------	OnTick
+//------------------------------------------------------------------  OnTick
 void OnTick()
   {
-   prisEURUSD.Main(); // process incoming tick
+   EURUSD.Main(); // process incoming tick
   }
 //+------------------------------------------------------------------+
