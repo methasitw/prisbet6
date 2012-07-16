@@ -454,20 +454,32 @@ string CSymbolInfo::SwapModeDescription(void) const
 //---
    switch(m_swap_mode)
      {
-      case SYMBOL_SWAP_MODE_DISABLED:
+case SYMBOL_SWAP_MODE_DISABLED:
          str="No swaps";
          break;
-      case SYMBOL_SWAP_MODE_BY_POINTS:
+      case SYMBOL_SWAP_MODE_POINTS:
          str="Swaps are calculated in points";
          break;
-      case SYMBOL_SWAP_MODE_BY_MONEY:
-         str="Swaps are calculated in of deposit currency";
+      case SYMBOL_SWAP_MODE_CURRENCY_SYMBOL:
+         str="Swaps are calculated in base currency";
          break;
-      case SYMBOL_SWAP_MODE_BY_INTEREST:
-         str="Swaps are calculated at an annual percentage";
+      case SYMBOL_SWAP_MODE_CURRENCY_MARGIN:
+         str="Swaps are calculated in margin currency";
          break;
-      case SYMBOL_SWAP_MODE_BY_MARGIN_CURRENCY:
-         str="Swaps are calculated in  of margin currency";
+      case SYMBOL_SWAP_MODE_CURRENCY_DEPOSIT:
+         str="Swaps are calculated in deposit currency";
+         break;
+      case SYMBOL_SWAP_MODE_INTEREST_CURRENT:
+         str="Swaps are calculated as annual interest using the current price";
+         break;
+      case SYMBOL_SWAP_MODE_INTEREST_OPEN:
+         str="Swaps are calculated as annual interest using the open price";
+         break;
+      case SYMBOL_SWAP_MODE_REOPEN_CURRENT:
+         str="Swaps are charged by reopening positions at the close price";
+         break;
+      case SYMBOL_SWAP_MODE_REOPEN_BID:
+         str="Swaps are charged by reopening positions at the Bid price";
          break;
       default:
          str="Unknown swap mode";

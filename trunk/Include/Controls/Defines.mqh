@@ -9,10 +9,11 @@
 //--- properties flags
 enum ENUM_WND_PROP_FLAGS
   {
-   WND_PROP_FLAG_CAN_DRAG       = 1,                              // can be dragged by mouse
-   WND_PROP_FLAG_CLICKS_BY_PRESS= 2,                              // generates the "click" event series on pressing left mouse button
-   WND_PROP_FLAG_CAN_LOCK       = 4,                              // control with fixed state (usually it is a button)
-   WND_PROP_FLAG_READ_ONLY      = 8                               // read only (usually it is a edit)
+   WND_PROP_FLAG_CAN_DBL_CLICK  = 1,                              // can be double clicked by mouse
+   WND_PROP_FLAG_CAN_DRAG       = 2,                              // can be dragged by mouse
+   WND_PROP_FLAG_CLICKS_BY_PRESS= 4,                              // generates the "click" event series on pressing left mouse button
+   WND_PROP_FLAG_CAN_LOCK       = 8,                              // control with fixed state (usually it is a button)
+   WND_PROP_FLAG_READ_ONLY      =16                               // read only (usually it is a edit)
   };
 //--- state flags
 enum ENUM_WND_STATE_FLAGS
@@ -90,11 +91,10 @@ enum ENUM_WND_ALIGN_FLAGS
 #define CONTROLS_INVALID_ID                 (-1)     // invalid ID
 #define CONTROLS_INVALID_INDEX              (-1)     // invalid index of array
 #define CONTROLS_MAXIMUM_ID                 (1000)   // maximum number of IDs in application
-#define CONTROLS_HIDE_X                     (-1000)  // X coordinate of hidden area
-#define CONTROLS_HIDE_Y                     (-1000)  // Y coordinate of hidden area
 #define CONTROLS_BORDER_WIDTH               (1)      // border width
 #define CONTROLS_SUBWINDOW_GAP              (3)      // зазор между подокнами по оси Y
 #define CONTROLS_DRAG_SPACING               (50)     // предел чувствительности при перетаскивании
+#define CONTROLS_DBL_CLICK_TIME             (100)    // double click interval
 //--- BmpButton
 #define CONTROLS_BUTTON_SIZE                (16)     // default size of button (16 x 16)
 //--- Scrolls
@@ -133,6 +133,7 @@ enum ENUM_WND_ALIGN_FLAGS
 //| Macro                                                            |
 //+------------------------------------------------------------------+
 //--- check properties
+#define IS_CAN_DBL_CLICK     ((m_prop_flags&WND_PROP_FLAG_CAN_DBL_CLICK)!=0)
 #define IS_CAN_DRAG          ((m_prop_flags&WND_PROP_FLAG_CAN_DRAG)!=0)
 #define IS_CLICKS_BY_PRESS   ((m_prop_flags&WND_PROP_FLAG_CLICKS_BY_PRESS)!=0)
 #define IS_CAN_LOCK          ((m_prop_flags&WND_PROP_FLAG_CAN_LOCK)!=0)
@@ -164,17 +165,18 @@ enum ENUM_WND_ALIGN_FLAGS
 //| Events                                                           |
 //+------------------------------------------------------------------+
 #define ON_CLICK                (0)   // clicking on control event
-#define ON_SHOW                 (1)   // showing control event
-#define ON_HIDE                 (2)   // hiding control event
-#define ON_CHANGE               (3)   // changing control event
-#define ON_START_EDIT           (4)   // start of editing event
-#define ON_END_EDIT             (5)   // end of editing event
-#define ON_SCROLL_INC           (6)   // increment of scrollbar event
-#define ON_SCROLL_DEC           (7)   // decrement of scrollbar event
-#define ON_MOUSE_FOCUS_SET      (8)   // the "mouse cursor entered the control" event
-#define ON_MOUSE_FOCUS_KILL     (9)   // the "mouse cursor exited the control" event
-#define ON_DRAG_START           (10)  // the "control dragging start" event
-#define ON_DRAG_PROCESS         (11)  // the "control is being dragged" event
-#define ON_DRAG_END             (12)  // the "control dragging end" event
+#define ON_DBL_CLICK            (1)   // double clicking on control event
+#define ON_SHOW                 (2)   // showing control event
+#define ON_HIDE                 (3)   // hiding control event
+#define ON_CHANGE               (4)   // changing control event
+#define ON_START_EDIT           (5)   // start of editing event
+#define ON_END_EDIT             (6)   // end of editing event
+#define ON_SCROLL_INC           (7)   // increment of scrollbar event
+#define ON_SCROLL_DEC           (8)   // decrement of scrollbar event
+#define ON_MOUSE_FOCUS_SET      (9)   // the "mouse cursor entered the control" event
+#define ON_MOUSE_FOCUS_KILL     (10)  // the "mouse cursor exited the control" event
+#define ON_DRAG_START           (11)  // the "control dragging start" event
+#define ON_DRAG_PROCESS         (12)  // the "control is being dragged" event
+#define ON_DRAG_END             (13)  // the "control dragging end" event
 #define ON_APP_CLOSE            (100) // "closing the application" event
 //+------------------------------------------------------------------+

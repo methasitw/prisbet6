@@ -37,6 +37,7 @@ protected:
    int               m_mouse_x;             // X coordinate
    int               m_mouse_y;             // Y coordinate
    int               m_mouse_flags;         // state of buttons
+   uint              m_last_click;          // last click time
    //--- drag object
    CDragWnd*         m_drag_object;         // pointer to the dragged object
 
@@ -46,7 +47,7 @@ public:
    //--- create
    virtual bool      Create(const long chart,const string name,const int subwin,const int x1,const int y1,const int x2,const int y2);
    //--- release memory
-   virtual bool      Destroy(void);
+   virtual void      Destroy(const int reason=0);
    //--- chart event handler
    virtual bool      OnEvent(const int id,const long& lparam,const double& dparam,const string& sparam);
    virtual bool      OnMouseEvent(const int x,const int y,const int flags);
@@ -57,27 +58,30 @@ public:
    CWnd*             Control(const int ind)            const { return(NULL);                 }
    virtual CWnd*     ControlFind(const long id);
    //--- geometry
-   const CRect*      Rect(void)                        const { return(GetPointer(m_rect));   }
-   int               Left(void)                        const { return(m_rect.Left());        }
-   virtual void      Left(const int x)                       { m_rect.Left(x);               }
-   int               Top(void)                         const { return(m_rect.Top());         }
-   virtual void      Top(const int y)                        { m_rect.Top(y);                }
-   int               Right(void)                       const { return(m_rect.Right());       }
-   virtual void      Right(const int x)                      { m_rect.Right(x);              }
-   int               Bottom(void)                      const { return(m_rect.Bottom());      }
-   virtual void      Bottom(const int y)                     { m_rect.Bottom(y);             }
+   const CRect       Rect(void)                        const { return(m_rect);               }
+   int               Left(void)                        const { return(m_rect.left);          }
+   virtual void      Left(const int x)                       { m_rect.left=x;                }
+   int               Top(void)                         const { return(m_rect.top);           }
+   virtual void      Top(const int y)                        { m_rect.top=y;                 }
+   int               Right(void)                       const { return(m_rect.right);         }
+   virtual void      Right(const int x)                      { m_rect.right=x;               }
+   int               Bottom(void)                      const { return(m_rect.bottom);        }
+   virtual void      Bottom(const int y)                     { m_rect.bottom=y;              }
    int               Width(void)                       const { return(m_rect.Width());       }
    virtual bool      Width(const int w);
    int               Height(void)                      const { return(m_rect.Height());      }
    virtual bool      Height(const int h);
+   CSize             Size(void)                        const { return(m_rect.Size());        }
+   virtual bool      Size(const int w,const int h);
+   virtual bool      Size(const CSize& size);
    virtual bool      Move(const int x,const int y);
+   virtual bool      Move(const CPoint& point);
    virtual bool      Shift(const int dx,const int dy);
-   virtual bool      Resize(const int w,const int h);
    bool              Contains(const int x,const int y) const { return(m_rect.Contains(x,y)); }
    bool              Contains(CWnd* control) const;
    //--- alignment
    void              Alignment(const int flags,const int left,const int top,const int right,const int bottom);
-   virtual bool      Align(const CRect* rect);
+   virtual bool      Align(const CRect& rect);
    //--- ID
    virtual long      Id(const long id);
    long              Id(void)                          const { return(m_id);                 }
@@ -124,6 +128,7 @@ protected:
    virtual bool      OnActivate(void)                        { return(true);                 }
    virtual bool      OnDeactivate(void)                      { return(true);                 }
    virtual bool      OnClick(void);
+   virtual bool      OnDblClick(void);
    virtual bool      OnChange(void)                          { return(true);                 }
    //--- mouse event handlers
    virtual bool      OnMouseDown(void);
@@ -192,7 +197,12 @@ bool CWnd::OnMouseEvent(const int x,const int y,const int flags)
         {
          //--- mouse button has already been pressed
          if(IS_CAN_DRAG)        return(OnDragProcess(x,y));
-         if(IS_CLICKS_BY_PRESS) return(EventChartCustom(m_chart_id,ON_CLICK,m_id,0.0,m_name));
+         if(IS_CLICKS_BY_PRESS)
+           {
+            EventChartCustom(m_chart_id,ON_CLICK,m_id,0.0,m_name);
+            //--- handled
+            return(true);
+           }
         }
       else
         {
@@ -226,7 +236,7 @@ bool CWnd::OnMouseEvent(const int x,const int y,const int flags)
          m_mouse_x    =x;
          m_mouse_y    =y;
          //--- call the handler
-          return(OnMouseUp());
+         return(OnMouseUp());
         }
      }
    //--- handled
@@ -249,6 +259,7 @@ CWnd::CWnd(void) : m_chart_id(CONTROLS_INVALID_ID),
                    m_mouse_x(0),
                    m_mouse_y(0),
                    m_mouse_flags(MOUSE_INVALID_FLAGS),
+                   m_last_click(0),
                    m_drag_object(NULL)
   {
   }
@@ -278,16 +289,10 @@ bool CWnd::Create(const long chart,const string name,const int subwin,const int 
 //+------------------------------------------------------------------+
 //| Destruction of the control                                       |
 //+------------------------------------------------------------------+
-bool CWnd::Destroy(void)
+void CWnd::Destroy(const int reason)
   {
 //--- call virtual event handler
-   if(OnDestroy())
-     {
-      m_name="";
-      return(true);
-     }
-//--- failure
-   return(false);
+   if(OnDestroy())  m_name="";
   }
 //+------------------------------------------------------------------+
 //| Find control by specified ID                                     |
@@ -306,7 +311,7 @@ CWnd* CWnd::ControlFind(const long id)
 bool CWnd::Width(const int w)
   {
 //--- change width
-   Right(Left()+w);
+   m_rect.Width(w);
 //--- call virtual event handler
    return(OnResize());
   }
@@ -316,7 +321,27 @@ bool CWnd::Width(const int w)
 bool CWnd::Height(const int h)
   {
 //--- change height
-   Bottom(Top()+h);
+   m_rect.Height(h);
+//--- call virtual event handler
+   return(OnResize());
+  }
+//+------------------------------------------------------------------+
+//| Resize control                                                   |
+//+------------------------------------------------------------------+
+bool CWnd::Size(const int w,const int h)
+  {
+//--- change size
+   m_rect.Size(w,h);
+//--- call virtual event handler
+   return(OnResize());
+  }
+//+------------------------------------------------------------------+
+//| Resize control                                                   |
+//+------------------------------------------------------------------+
+bool CWnd::Size(const CSize& size)
+  {
+//--- change size
+   m_rect.Size(size);
 //--- call virtual event handler
    return(OnResize());
   }
@@ -327,8 +352,16 @@ bool CWnd::Move(const int x,const int y)
   {
 //--- moving
    m_rect.Move(x,y);
-//--- check current state
-   if(!IS_VISIBLE) return(true);
+//--- call virtual event handler
+   return(OnMove());
+  }
+//+------------------------------------------------------------------+
+//| Absolute movement of the control 	                              |
+//+------------------------------------------------------------------+
+bool CWnd::Move(const CPoint& point)
+  {
+//--- moving
+   m_rect.Move(point);
 //--- call virtual event handler
    return(OnMove());
   }
@@ -339,22 +372,8 @@ bool CWnd::Shift(const int dx,const int dy)
   {
 //--- moving
    m_rect.Shift(dx,dy);
-//--- check current state
-   if(!IS_VISIBLE) return(true);
 //--- call virtual event handler
    return(OnMove());
-  }
-//+------------------------------------------------------------------+
-//| Resize control                                                   |
-//+------------------------------------------------------------------+
-bool CWnd::Resize(const int w,const int h)
-  {
-//--- change width
-   m_rect.Width(w);
-//--- change height
-   m_rect.Height(h);
-//--- call virtual event handler
-   return(OnResize());
   }
 //+------------------------------------------------------------------+
 //| Check contains                                                   |
@@ -469,11 +488,10 @@ void CWnd::Alignment(const int flags,const int left,const int top,const int righ
 //+------------------------------------------------------------------+
 //| Align element in specified chart area                            |
 //+------------------------------------------------------------------+
-bool CWnd::Align(const CRect* rect)
+bool CWnd::Align(const CRect& rect)
   {
    int new_value=0;
 //--- check
-   if(rect==NULL)                        return(false);
    if(m_align_flags==WND_ALIGN_NONE)     return(true);
 //--- we are interested only in alignment by right and bottom borders,
 //--- as left and right borders are processed in the OnMove()
@@ -484,12 +502,12 @@ bool CWnd::Align(const CRect* rect)
         {
          //--- and by left border (change size)
          new_value=rect.Width()-m_align_left-m_align_right;
-         if(!Resize(new_value,Height())) return(false);
+         if(!Size(new_value,Height())) return(false);
         }
       else
         {
          //--- no alignment by left border (move)
-         new_value=rect.Right()-Width()-m_align_right;
+         new_value=rect.right-Width()-m_align_right;
          if(!Move(new_value,Top()))      return(false);
         }
      }
@@ -500,12 +518,12 @@ bool CWnd::Align(const CRect* rect)
         {
          //--- and by top border (change size)
          new_value=rect.Height()-m_align_top-m_align_bottom;
-         if(!Resize(Width(),new_value))  return(false);
+         if(!Size(Width(),new_value))  return(false);
         }
       else
         {
          //--- no alignment by top border (move)
-         new_value=rect.Bottom()-Height()-m_align_bottom;
+         new_value=rect.bottom-Height()-m_align_bottom;
          if(!Move(Left(),new_value))     return(false);
         }
      }
@@ -534,7 +552,19 @@ bool CWnd::MouseFocusKill(const long id)
 bool CWnd::OnClick(void)
   {
 //--- send notification
-   return(EventChartCustom(m_chart_id,ON_CLICK,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_CLICK,m_id,0.0,m_name);
+//--- handled
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//| Handler of the "doubl click" event                               |
+//+------------------------------------------------------------------+
+bool CWnd::OnDblClick(void)
+  {
+//--- send notification
+   EventChartCustom(m_chart_id,ON_DBL_CLICK,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Handler of click on the left mouse button                        |
@@ -551,6 +581,19 @@ bool CWnd::OnMouseDown(void)
 //+------------------------------------------------------------------+
 bool CWnd::OnMouseUp(void)
   {
+   if(IS_CAN_DBL_CLICK)
+     {
+      uint last_time=GetTickCount();
+      if(m_last_click==0 || last_time-m_last_click>CONTROLS_DBL_CLICK_TIME)
+        {
+         m_last_click=(last_time==0)?1:last_time;
+        }
+      else
+        {
+         m_last_click=0;
+         return(OnDblClick());
+        }
+     }
    if(IS_CAN_DRAG)         return(OnDragEnd());
    if(!IS_CLICKS_BY_PRESS) return(OnClick());
 //--- handled
@@ -563,7 +606,9 @@ bool CWnd::OnDragStart(void)
   {
    if(!IS_CAN_DRAG)        return(true);
 //--- generate event
-   return(EventChartCustom(m_chart_id,ON_DRAG_START,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_DRAG_START,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Handler of control dragging process                              |
@@ -584,7 +629,9 @@ bool CWnd::OnDragEnd(void)
   {
    if(!IS_CAN_DRAG)        return(true);
 //--- generate event
-   return(EventChartCustom(m_chart_id,ON_DRAG_END,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_DRAG_END,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Destroy the dragged object                                       |
@@ -661,6 +708,8 @@ bool CDragWnd::OnDragProcess(const int x,const int y)
    m_mouse_x=x;
    m_mouse_y=y;
 //--- generate event
-   return(EventChartCustom(m_chart_id,ON_DRAG_PROCESS,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_DRAG_PROCESS,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+

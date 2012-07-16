@@ -172,7 +172,9 @@ bool CScroll::OnShow(void)
   {
    if(m_id==CONTROLS_INVALID_ID) return(true);
 //--- send notification
-   return(EventChartCustom(m_chart_id,ON_SHOW,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_SHOW,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Handler of the "Hide scrollbar" event                            |
@@ -181,7 +183,9 @@ bool CScroll::OnHide(void)
   {
    if(m_id==CONTROLS_INVALID_ID) return(true);
 //--- send notification
-   return(EventChartCustom(m_chart_id,ON_HIDE,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_HIDE,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Handler of click on the "increment" button                       |
@@ -191,7 +195,9 @@ bool CScroll::OnClickInc(void)
 //--- try to increment current value
    if(!CurrPos(m_curr_pos+1)) return(true);
 //--- if value was changed, send notification
-   return(EventChartCustom(m_chart_id,ON_SCROLL_INC,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_SCROLL_INC,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Handler of click on the "decrement" button                       |
@@ -201,7 +207,9 @@ bool CScroll::OnClickDec(void)
 //--- try to decrement current value
    if(!CurrPos(m_curr_pos-1)) return(true);
 //--- if value was changed, send notification
-   return(EventChartCustom(m_chart_id,ON_SCROLL_DEC,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_SCROLL_DEC,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Class CScrollV                                                   |
@@ -322,9 +330,9 @@ bool CScrollV::OnResize(void)
 //--- can not change the lateral size
    if(Width()!=CONTROLS_SCROLL_SIZE) m_rect.Width(CONTROLS_SCROLL_SIZE);
 //--- resize the scrollbar background
-   if(!m_back.Resize(Width(),Height()))                                       return(false);
+   if(!m_back.Size(Size()))                                       return(false);
 //--- move the "Increment" button
-   if(!m_inc.Move(m_inc.Left(),Bottom()-CONTROLS_SCROLL_SIZE))                return(false);
+   if(!m_inc.Move(m_inc.Left(),Bottom()-CONTROLS_SCROLL_SIZE))    return(false);
 //--- adjust the scroll box position
    return(OnChangePos());
   }
@@ -371,7 +379,7 @@ bool CScrollV::OnThumbDragProcess(void)
      {
       ushort event_id=(m_curr_pos<new_pos)?ON_SCROLL_INC:ON_SCROLL_DEC;
       m_curr_pos=new_pos;
-      return(EventChartCustom(m_chart_id,event_id,m_id,0.0,m_name));
+      EventChartCustom(m_chart_id,event_id,m_id,0.0,m_name);
      }
 //--- move thumb
    m_thumb.Move(x,y);
@@ -385,6 +393,7 @@ bool CScrollV::OnThumbDragEnd(void)
   {
    if(m_drag_object!=NULL)
      {
+      m_thumb.MouseFlags(m_drag_object.MouseFlags());
       delete m_drag_object;
       m_drag_object=NULL;
      }
@@ -528,9 +537,9 @@ bool CScrollH::OnResize(void)
    //--- can not change the lateral size
    if(Height()!=CONTROLS_SCROLL_SIZE) m_rect.Height(CONTROLS_SCROLL_SIZE);
 //--- resize the scrollbar background
-   if(!m_back.Resize(Width(),Height()))                               return(false);
+   if(!m_back.Size(Size()))                                  return(false);
 //--- move the "Increment" button
-   if(!m_inc.Move(Right()-CONTROLS_SCROLL_SIZE,m_inc.Top()))          return(false);
+   if(!m_inc.Move(Right()-CONTROLS_SCROLL_SIZE,m_inc.Top())) return(false);
 //--- adjust the scroll box position
    return(OnChangePos());
   }
@@ -577,7 +586,7 @@ bool CScrollH::OnThumbDragProcess(void)
      {
       ushort event_id=(m_curr_pos<new_pos)?ON_SCROLL_INC:ON_SCROLL_DEC;
       m_curr_pos=new_pos;
-      return(EventChartCustom(m_chart_id,event_id,m_id,0.0,m_name));
+      EventChartCustom(m_chart_id,event_id,m_id,0.0,m_name);
      }
 //--- move thumb
    m_thumb.Move(x,y);
@@ -591,6 +600,7 @@ bool CScrollH::OnThumbDragEnd(void)
   {
    if(m_drag_object!=NULL)
      {
+      m_thumb.MouseFlags(m_drag_object.MouseFlags());
       delete m_drag_object;
       m_drag_object=NULL;
      }

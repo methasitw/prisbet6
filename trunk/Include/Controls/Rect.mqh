@@ -4,151 +4,243 @@
 //|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
-//| Class Point                                                      |
+//| Structure CPoint                                                 |
 //| Usage: point of chart in Cartesian coordinates                   |
 //+------------------------------------------------------------------+
-class CPoint
+struct CPoint
   {
-public:
-   int               m_x;                   // horizontal coordinate
-   int               m_y;                   // vertical coordinate
-
-public:
-                     CPoint(void);
-                     CPoint(const int x,const int y);
-                    ~CPoint(void);
-   //--- methods
-   void              Move(const int x,const int y)    { m_x=x; m_y=y;     }
-   void              Shift(const int dx,const int dy) { m_x+=dx; m_y+=dy; }
-   //--- format
-   string            Format(string& fmt)      const;
+   int               x;                   // horizontal coordinate
+   int               y;                   // vertical coordinate
   };
 //+------------------------------------------------------------------+
-//| Constructor                                                      |
+//| Structure CSize                                                  |
+//| Usage: size of area of chart in Cartesian coordinates            |
 //+------------------------------------------------------------------+
-CPoint::CPoint(void) : m_x(0), m_y(0)
+struct CSize
   {
-  }
+   int               cx;                  // horizontal size
+   int               cy;                  // vertical size
+  };
 //+------------------------------------------------------------------+
-//| Constructor                                                      |
-//+------------------------------------------------------------------+
-CPoint::CPoint(const int x,const int y) : m_x(x), m_y(y)
-  {
-  }
-//+------------------------------------------------------------------+
-//| Destructor                                                       |
-//+------------------------------------------------------------------+
-CPoint::~CPoint(void)
-  {
-  }
-//+------------------------------------------------------------------+
-//| Formatted output to row                                          |
-//+------------------------------------------------------------------+
-string CPoint::Format(string& fmt) const
-  {
-//--- clear
-   fmt="";
-//--- formatting
-   fmt=StringFormat("(%d,%d)",m_x,m_y);
-//--- return
-   return(fmt);
-  }
-//+------------------------------------------------------------------+
-//| Class CRect                                                      |
+//| Structure CRect                                                  |
 //| Usage: area of chart in Cartesian coordinates                    |
 //+------------------------------------------------------------------+
-class CRect
+struct CRect
   {
-public:
-   CPoint            m_lt;                  // upper left point
-   CPoint            m_rb;                  // lower right point
+   int               left;                // left coordinate
+   int               top;                 // top coordinate
+   int               right;               // right coordinate
+   int               bottom;              // bottom coordinate
 
-public:
-                     CRect(void);
-                     CRect(const int l,const int t,const int r,const int b);
-                    ~CRect(void);
-   //--- data
-   int               Left(void)               const { return(m_lt.m_x);       }
-   void              Left(const int x)              { m_lt.m_x=x;             }
-   int               Top(void)                const { return(m_lt.m_y);       }
-   void              Top(const int y)               { m_lt.m_y=y;             }
-   int               Right(void)              const { return(m_rb.m_x);       }
-   void              Right(const int x)             { m_rb.m_x=x;             }
-   int               Bottom(void)             const { return(m_rb.m_y);       }
-   void              Bottom(const int y)            { m_rb.m_y=y;             }
    //--- methods
-   int               Width(void)              const { return(Right()-Left()); }
-   void              Width(const int w)             { m_rb.m_x=m_lt.m_x+w;    }
-   int               Height(void)             const { return(Bottom()-Top()); }
-   void              Height(const int h)            { m_rb.m_y=m_lt.m_y+h;    }
+   CPoint            LeftTop(void)            const;
+   void              LeftTop(const int x,const int y);
+   void              LeftTop(const CPoint& point);
+   CPoint            RightBottom(void)        const;
+   void              RightBottom(const int x,const int y);
+   void              RightBottom(const CPoint& point);
+   CPoint            CenterPoint(void) const;
+   int               Width(void)              const { return(right-left); }
+   void              Width(const int w)             { right=left+w;       }
+   int               Height(void)             const { return(bottom-top); }
+   void              Height(const int h)            { bottom=top+h;       }
+   CSize             Size(void)               const;
+   void              Size(const int cx,const int cy);
+   void              Size(const CSize& size);
    void              SetBound(const int l,const int t,const int r,const int b);
    void              SetBound(const CRect& rect);
+   void              SetBound(const CPoint& point,const CSize& size);
+   void              SetBound(const CPoint& left_top,const CPoint& right_bottom);
    void              Move(const int x,const int y);
+   void              Move(const CPoint& point);
    void              Shift(const int dx,const int dy);
+   void              Shift(const CPoint& point);
+   void              Shift(const CSize& size);
    bool              Contains(const int x,const int y) const;
-   //--- format
-   string            Format(string& fmt)      const;
+   bool              Contains(const CPoint& point) const;
+   void              Normalize(void);
   };
 //+------------------------------------------------------------------+
-//| Constructor                                                      |
+//| Get parameters of area                                           |
 //+------------------------------------------------------------------+
-CRect::CRect(void) : m_lt(), m_rb()
+CPoint CRect::LeftTop(void) const
   {
+   CPoint point;
+//--- action
+   point.x=left;
+   point.y=top;
+//--- result
+   return(point);
   }
 //+------------------------------------------------------------------+
-//| Constructor                                                      |
+//| Set parameters of area                                           |
 //+------------------------------------------------------------------+
-CRect::CRect(const int l,const int t,const int r,const int b) : m_lt(l,t), m_rb(r,b)
+void CRect::LeftTop(const int x,const int y)
   {
+   left=x;
+   top =y;
   }
 //+------------------------------------------------------------------+
-//| Destructor                                                       |
+//| Set parameters of area                                           |
 //+------------------------------------------------------------------+
-CRect::~CRect(void)
+void CRect::LeftTop(const CPoint& point)
   {
+   left=point.x;
+   top =point.y;
+  }
+//+------------------------------------------------------------------+
+//| Get parameters of area                                           |
+//+------------------------------------------------------------------+
+CPoint CRect::RightBottom(void) const
+  {
+   CPoint point;
+//--- action
+   point.x=right;
+   point.y=bottom;
+//--- result
+   return(point);
+  }
+//+------------------------------------------------------------------+
+//| Set parameters of area                                           |
+//+------------------------------------------------------------------+
+void CRect::RightBottom(const int x,const int y)
+  {
+   right =x;
+   bottom=y;
+  }
+//+------------------------------------------------------------------+
+//| Set parameters of area                                           |
+//+------------------------------------------------------------------+
+void CRect::RightBottom(const CPoint& point)
+  {
+   right =point.x;
+   bottom=point.y;
+  }
+//+------------------------------------------------------------------+
+//| Get parameters of area                                           |
+//+------------------------------------------------------------------+
+CPoint CRect::CenterPoint(void) const
+  {
+   CPoint point;
+//--- action
+   point.x=left+Width()/2;
+   point.y=top+Height()/2;
+//--- result
+   return(point);
+  }
+//+------------------------------------------------------------------+
+//| Get parameters of area                                           |
+//+------------------------------------------------------------------+
+CSize CRect::Size(void) const
+  {
+   CSize size;
+//--- action
+   size.cx=right-left;
+   size.cy=bottom-top;
+//--- result
+   return(size);
+  }
+//+------------------------------------------------------------------+
+//| Set parameters of area                                           |
+//+------------------------------------------------------------------+
+void CRect::Size(const int cx,const int cy)
+  {
+   right =left+cx;
+   bottom=top+cy;
+  }
+//+------------------------------------------------------------------+
+//| Set parameters of area                                           |
+//+------------------------------------------------------------------+
+void CRect::Size(const CSize& size)
+  {
+   right =left+size.cx;
+   bottom=top+size.cy;
   }
 //+------------------------------------------------------------------+
 //| Set parameters of area                                           |
 //+------------------------------------------------------------------+
 void CRect::SetBound(const int l,const int t,const int r,const int b)
   {
-//--- save parameters
-   m_lt.m_x=l;
-   m_lt.m_y=t;
-   m_rb.m_x=r;
-   m_rb.m_y=b;
+   left  =l;
+   top   =t;
+   right =r;
+   bottom=b;
   }
 //+------------------------------------------------------------------+
 //| Set parameters of area                                           |
 //+------------------------------------------------------------------+
 void CRect::SetBound(const CRect& rect)
   {
-//--- save parameters
-   m_lt.m_x=rect.Left();
-   m_lt.m_y=rect.Top();
-   m_rb.m_x=rect.Right();
-   m_rb.m_y=rect.Bottom();
+   left  =rect.left;
+   top   =rect.top;
+   right =rect.right;
+   bottom=rect.bottom;
+  }
+//+------------------------------------------------------------------+
+//| Set parameters of area                                           |
+//+------------------------------------------------------------------+
+void CRect::SetBound(const CPoint& point,const CSize& size)
+  {
+   LeftTop(point);
+   Size(size);
+  }
+//+------------------------------------------------------------------+
+//| Set parameters of area                                           |
+//+------------------------------------------------------------------+
+void CRect::SetBound(const CPoint& left_top,const CPoint& right_bottom)
+  {
+   LeftTop(left_top);
+   RightBottom(right_bottom);
   }
 //+------------------------------------------------------------------+
 //| Absolute movement of area                                        |
 //+------------------------------------------------------------------+
 void CRect::Move(const int x,const int y)
   {
-//--- calculate shifts
-   int dx=x-Left();
-   int dy=y-Top();
-//--- move points
-   m_lt.Move(x,y);
-   m_rb.Shift(dx,dy);
+   right +=x-left;
+   bottom+=y-top;
+   left   =x;
+   top    =y;
+  }
+//+------------------------------------------------------------------+
+//| Absolute movement of area                                        |
+//+------------------------------------------------------------------+
+void CRect::Move(const CPoint& point)
+  {
+   right +=point.x-left;
+   bottom+=point.y-top;
+   left   =point.x;
+   top    =point.y;
   }
 //+------------------------------------------------------------------+
 //| Relative movement of area                                        |
 //+------------------------------------------------------------------+
 void CRect::Shift(const int dx,const int dy)
   {
-//--- move points
-   m_lt.Shift(dx,dy);
-   m_rb.Shift(dx,dy);
+   left  +=dx;
+   top   +=dy;
+   right +=dx;
+   bottom+=dy;
+  }
+//+------------------------------------------------------------------+
+//| Relative movement of area                                        |
+//+------------------------------------------------------------------+
+void CRect::Shift(const CPoint& point)
+  {
+   left  +=point.x;
+   top   +=point.y;
+   right +=point.x;
+   bottom+=point.y;
+  }
+//+------------------------------------------------------------------+
+//| Relative movement of area                                        |
+//+------------------------------------------------------------------+
+void CRect::Shift(const CSize& size)
+  {
+   left  +=size.cx;
+   top   +=size.cy;
+   right +=size.cx;
+   bottom+=size.cy;
   }
 //+------------------------------------------------------------------+
 //| Check if a point is within the area                              |
@@ -156,19 +248,32 @@ void CRect::Shift(const int dx,const int dy)
 bool CRect::Contains(const int x,const int y) const
   {
 //--- check and return the result
-   return(x>=Left() && x<=Right() && y>=Top() && y<=Bottom());
+   return(x>=left && x<=right && y>=top && y<=bottom);
   }
 //+------------------------------------------------------------------+
-//| Formatted output to row                                          |
+//| Check if a point is within the area                              |
 //+------------------------------------------------------------------+
-string CRect::Format(string& fmt) const
+bool CRect::Contains(const CPoint& point) const
   {
-   string lt,rb;
-//--- clear
-   fmt="";
-//--- formatting
-   fmt=StringFormat("(%s,%s)",m_lt.Format(lt),m_rb.Format(rb));
-//--- return
-   return(fmt);
+//--- check and return the result
+   return(point.x>=left && point.x<=right && point.y>=top && point.y<=bottom);
+  }
+//+------------------------------------------------------------------+
+//| Standardizes the height and width                                |
+//+------------------------------------------------------------------+
+void CRect::Normalize(void)
+  {
+   if(left>right)
+     {
+      int tmp=left;
+      left=right;
+      right=tmp;
+     }
+   if(top>bottom)
+     {
+      int tmp=top;
+      top=bottom;
+      bottom=tmp;
+     }
   }
 //+------------------------------------------------------------------+

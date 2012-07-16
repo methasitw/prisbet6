@@ -1,8 +1,7 @@
 //+------------------------------------------------------------------+
 //|                                                        Trade.mqh |
-//|                      Copyright © 2010, MetaQuotes Software Corp. |
-//|                                       http://www.metaquotes.net/ |
-//|                                              Revision 2010.02.08 |
+//|                        Copyright 2012, MetaQuotes Software Corp. |
+//|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
 #include <Object.mqh>
 #include "SymbolInfo.mqh"
@@ -30,6 +29,7 @@ protected:
    MqlTradeRequest   m_request;         // request data
    MqlTradeResult    m_result;          // result data
    MqlTradeCheckResult m_check_result;  // result check data
+   bool              m_async_mode;      // trade mode
    ulong             m_magic;           // expert magic number
    ulong             m_deviation;       // deviation default
    ENUM_ORDER_TYPE_FILLING m_type_filling;
@@ -37,84 +37,87 @@ protected:
    ENUM_LOG_LEVELS   m_log_level;
 
 public:
-                     CTrade();
+                     CTrade(void);
+                    ~CTrade(void);
    //--- methods of access to protected data
-   void              LogLevel(ENUM_LOG_LEVELS log_level)     { m_log_level=log_level;               }
-   void              Request(MqlTradeRequest &request) const;
-   ENUM_TRADE_REQUEST_ACTIONS RequestAction()          const { return(m_request.action);            }
-   string            RequestActionDescription()        const;
-   ulong             RequestMagic()                    const { return(m_request.magic);             }
-   ulong             RequestOrder()                    const { return(m_request.order);             }
-   string            RequestSymbol()                   const { return(m_request.symbol);            }
-   double            RequestVolume()                   const { return(m_request.volume);            }
-   double            RequestPrice()                    const { return(m_request.price);             }
-   double            RequestStopLimit()                const { return(m_request.stoplimit);         }
-   double            RequestSL()                       const { return(m_request.sl);                }
-   double            RequestTP()                       const { return(m_request.tp);                }
-   ulong             RequestDeviation()                const { return(m_request.deviation);         }
-   ENUM_ORDER_TYPE   RequestType()                     const { return(m_request.type);              }
-   string            RequestTypeDescription()          const;
-   ENUM_ORDER_TYPE_FILLING RequestTypeFilling()        const { return(m_request.type_filling);      }
-   string            RequestTypeFillingDescription()   const;
-   ENUM_ORDER_TYPE_TIME RequestTypeTime()              const { return(m_request.type_time);         }
-   string            RequestTypeTimeDescription()      const;
-   datetime          RequestExpiration()               const { return(m_request.expiration);        }
-   string            RequestComment()                  const { return(m_request.comment);           }
+   void              LogLevel(const ENUM_LOG_LEVELS log_level)   { m_log_level=log_level;               }
+   void              Request(MqlTradeRequest &request)     const;
+   ENUM_TRADE_REQUEST_ACTIONS RequestAction(void)          const { return(m_request.action);            }
+   string            RequestActionDescription(void)        const;
+   ulong             RequestMagic(void)                    const { return(m_request.magic);             }
+   ulong             RequestOrder(void)                    const { return(m_request.order);             }
+   string            RequestSymbol(void)                   const { return(m_request.symbol);            }
+   double            RequestVolume(void)                   const { return(m_request.volume);            }
+   double            RequestPrice(void)                    const { return(m_request.price);             }
+   double            RequestStopLimit(void)                const { return(m_request.stoplimit);         }
+   double            RequestSL(void)                       const { return(m_request.sl);                }
+   double            RequestTP(void)                       const { return(m_request.tp);                }
+   ulong             RequestDeviation(void)                const { return(m_request.deviation);         }
+   ENUM_ORDER_TYPE   RequestType(void)                     const { return(m_request.type);              }
+   string            RequestTypeDescription(void)          const;
+   ENUM_ORDER_TYPE_FILLING RequestTypeFilling(void)        const { return(m_request.type_filling);      }
+   string            RequestTypeFillingDescription(void)   const;
+   ENUM_ORDER_TYPE_TIME RequestTypeTime(void)              const { return(m_request.type_time);         }
+   string            RequestTypeTimeDescription(void)      const;
+   datetime          RequestExpiration(void)               const { return(m_request.expiration);        }
+   string            RequestComment(void)                  const { return(m_request.comment);           }
    //---
-   void              Result(MqlTradeResult &result)    const;
-   uint              ResultRetcode()                   const { return(m_result.retcode);            }
-   string            ResultRetcodeDescription()        const;
-   ulong             ResultDeal()                      const { return(m_result.deal);               }
-   ulong             ResultOrder()                     const { return(m_result.order);              }
-   double            ResultVolume()                    const { return(m_result.volume);             }
-   double            ResultPrice()                     const { return(m_result.price);              }
-   double            ResultBid()                       const { return(m_result.bid);                }
-   double            ResultAsk()                       const { return(m_result.ask);                }
-   string            ResultComment()                   const { return(m_result.comment);            }
+   void              Result(MqlTradeResult &result)        const;
+   uint              ResultRetcode(void)                   const { return(m_result.retcode);            }
+   string            ResultRetcodeDescription(void)        const;
+   ulong             ResultDeal(void)                      const { return(m_result.deal);               }
+   ulong             ResultOrder(void)                     const { return(m_result.order);              }
+   double            ResultVolume(void)                    const { return(m_result.volume);             }
+   double            ResultPrice(void)                     const { return(m_result.price);              }
+   double            ResultBid(void)                       const { return(m_result.bid);                }
+   double            ResultAsk(void)                       const { return(m_result.ask);                }
+   string            ResultComment(void)                   const { return(m_result.comment);            }
    //---
    void              CheckResult(MqlTradeCheckResult &check_result) const;
-   uint              CheckResultRetcode()              const { return(m_check_result.retcode);      }
-   string            CheckResultRetcodeDescription()   const;
-   double            CheckResultBalance()              const { return(m_check_result.balance);      }
-   double            CheckResultEquity()               const { return(m_check_result.equity);       }
-   double            CheckResultProfit()               const { return(m_check_result.profit);       }
-   double            CheckResultMargin()               const { return(m_check_result.margin);       }
-   double            CheckResultMarginFree()           const { return(m_check_result.margin_free);  }
-   double            CheckResultMarginLevel()          const { return(m_check_result.margin_level); }
-   string            CheckResultComment()              const { return(m_check_result.comment);      }
+   uint              CheckResultRetcode(void)              const { return(m_check_result.retcode);      }
+   string            CheckResultRetcodeDescription(void)   const;
+   double            CheckResultBalance(void)              const { return(m_check_result.balance);      }
+   double            CheckResultEquity(void)               const { return(m_check_result.equity);       }
+   double            CheckResultProfit(void)               const { return(m_check_result.profit);       }
+   double            CheckResultMargin(void)               const { return(m_check_result.margin);       }
+   double            CheckResultMarginFree(void)           const { return(m_check_result.margin_free);  }
+   double            CheckResultMarginLevel(void)          const { return(m_check_result.margin_level); }
+   string            CheckResultComment(void)              const { return(m_check_result.comment);      }
    //--- trade methods
-   void              SetExpertMagicNumber(ulong magic)       { m_magic=magic;                       }
-   void              SetDeviationInPoints(ulong deviation)   { m_deviation=deviation;               }
-   void              SetTypeFilling(ENUM_ORDER_TYPE_FILLING filling) { m_type_filling=filling;      }
+   void              SetAsyncMode(const bool mode)               { m_async_mode=mode;                   }
+   void              SetExpertMagicNumber(const ulong magic)     { m_magic=magic;                       }
+   void              SetDeviationInPoints(const ulong deviation) { m_deviation=deviation;               }
+   void              SetTypeFilling(const ENUM_ORDER_TYPE_FILLING filling) { m_type_filling=filling;    }
    //--- methods for working with positions
-   bool              PositionOpen(const string symbol,ENUM_ORDER_TYPE order_type,double volume,
-                                  double price,double sl,double tp,const string comment="");
-   bool              PositionModify(const string symbol,double sl,double tp);
-   bool              PositionClose(const string symbol,ulong deviation=ULONG_MAX);
+   bool              PositionOpen(const string symbol,const ENUM_ORDER_TYPE order_type,const double volume,
+                                  const double price,const double sl,const double tp,const string comment="");
+   bool              PositionModify(const string symbol,const double sl,const double tp);
+   bool              PositionClose(const string symbol,const ulong deviation=ULONG_MAX);
    //--- methods for working with pending orders
-   bool              OrderOpen(const string symbol,ENUM_ORDER_TYPE order_type,double volume,
-                               double limit_price,double price,double sl,double tp,
-                               ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,
+   bool              OrderOpen(const string symbol,const ENUM_ORDER_TYPE order_type,const double volume,
+                               const double limit_price,const double price,const double sl,const double tp,
+                               const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,
                                const string comment="");
-   bool              OrderModify(ulong ticket,double price,double sl,double tp,
-                                 ENUM_ORDER_TYPE_TIME type_time,datetime expiration);
-   bool              OrderDelete(ulong ticket);
+   bool              OrderModify(const ulong ticket,const double price,const double sl,const double tp,
+                                 const ENUM_ORDER_TYPE_TIME type_time,const datetime expiration);
+   bool              OrderDelete(const ulong ticket);
    //--- additions methods
-   bool              Buy(double volume,const string symbol=NULL,double price=0.0,double sl=0.0,double tp=0.0,const string comment="");
-   bool              Sell(double volume,const string symbol=NULL,double price=0.0,double sl=0.0,double tp=0.0,const string comment="");
-   bool              BuyLimit(double volume,double price,const string symbol=NULL,double sl=0.0,double tp=0.0,
-                              ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,const string comment="");
-   bool              BuyStop(double volume,double price,const string symbol=NULL,double sl=0.0,double tp=0.0,
-                             ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,const string comment="");
-   bool              SellLimit(double volume,double price,const string symbol=NULL,double sl=0.0,double tp=0.0,
-                               ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,const string comment="");
-   bool              SellStop(double volume,double price,const string symbol=NULL,double sl=0.0,double tp=0.0,
-                              ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,const string comment="");
+   bool              Buy(const double volume,const string symbol=NULL,double price=0.0,const double sl=0.0,const double tp=0.0,const string comment="");
+   bool              Sell(const double volume,const string symbol=NULL,double price=0.0,const double sl=0.0,const double tp=0.0,const string comment="");
+   bool              BuyLimit(const double volume,const double price,const string symbol=NULL,const double sl=0.0,const double tp=0.0,
+                              const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,const string comment="");
+   bool              BuyStop(const double volume,const double price,const string symbol=NULL,const double sl=0.0,const double tp=0.0,
+                             const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,const string comment="");
+   bool              SellLimit(const double volume,const double price,const string symbol=NULL,const double sl=0.0,const double tp=0.0,
+                               const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,const string comment="");
+   bool              SellStop(const double volume,const double price,const string symbol=NULL,const double sl=0.0,const double tp=0.0,
+                              const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,const string comment="");
    //--- method check
-   virtual bool      OrderCheck(MqlTradeRequest& m_request,MqlTradeCheckResult& m_check_result);
+   virtual bool      OrderCheck(const MqlTradeRequest& request,MqlTradeCheckResult& check_result);
+   virtual bool      OrderSend(const MqlTradeRequest& request,MqlTradeResult& result);
    //--- info methods
-   void              PrintRequest() const;
-   void              PrintResult()  const;
+   void              PrintRequest(void) const;
+   void              PrintResult(void)  const;
    //--- positions
    string            FormatPositionType(string& str,const uint type)           const;
    //--- orders
@@ -128,32 +131,33 @@ public:
    string            FormatRequestResult(string& str,const MqlTradeRequest& request,const MqlTradeResult& result) const;
 
 protected:
-   void              ClearStructures();
-   bool              IsStopped(string function);
+   void              ClearStructures(void);
+   bool              IsStopped(const string function);
   };
 //+------------------------------------------------------------------+
-//| Constructor CTrade.                                              |
-//| INPUT:  no.                                                      |
-//| OUTPUT: no.                                                      |
-//| REMARK: no.                                                      |
+//| Constructor                                                      |
 //+------------------------------------------------------------------+
-void CTrade::CTrade()
+CTrade::CTrade(void) : m_async_mode(false),
+                       m_magic(0),
+                       m_deviation(10),
+                       m_type_filling(ORDER_FILLING_FOK),
+                       m_log_level(LOG_LEVEL_ERRORS)
+
   {
 //--- initialize protected data
    ClearStructures();
-   m_magic       =0;
-   m_deviation   =10;
-   m_type_filling=ORDER_FILLING_FOK;
-   m_log_level   =LOG_LEVEL_ERRORS;
 //--- check programm mode
    if(MQL5InfoInteger(MQL5_OPTIMIZATION)) m_log_level=LOG_LEVEL_NO;
    if(MQL5InfoInteger(MQL5_TESTING))      m_log_level=LOG_LEVEL_ALL;
   }
 //+------------------------------------------------------------------+
+//| Destructor                                                       |
+//+------------------------------------------------------------------+
+CTrade::~CTrade(void)
+  {
+  }
+//+------------------------------------------------------------------+
 //| Get the request structure.                                       |
-//| INPUT:  request - reference.                                     |
-//| OUTPUT: no.                                                      |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 void CTrade::Request(MqlTradeRequest& request) const
   {
@@ -175,11 +179,8 @@ void CTrade::Request(MqlTradeRequest& request) const
   }
 //+------------------------------------------------------------------+
 //| Get the trade action as string.                                  |
-//| INPUT:  no.                                                      |
-//| OUTPUT: the trade action as string.                              |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-string CTrade::RequestActionDescription() const
+string CTrade::RequestActionDescription(void) const
   {
    string str;
 //---
@@ -189,11 +190,8 @@ string CTrade::RequestActionDescription() const
   }
 //+------------------------------------------------------------------+
 //| Get the order type as string.                                    |
-//| INPUT:  no.                                                      |
-//| OUTPUT: the order type as string.                                |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-string CTrade::RequestTypeDescription() const
+string CTrade::RequestTypeDescription(void) const
   {
    string str;
 //---
@@ -203,11 +201,8 @@ string CTrade::RequestTypeDescription() const
   }
 //+------------------------------------------------------------------+
 //| Get the order type filling as string.                            |
-//| INPUT:  no.                                                      |
-//| OUTPUT: the order type filling as string.                        |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-string CTrade::RequestTypeFillingDescription() const
+string CTrade::RequestTypeFillingDescription(void) const
   {
    string str;
 //---
@@ -217,11 +212,8 @@ string CTrade::RequestTypeFillingDescription() const
   }
 //+------------------------------------------------------------------+
 //| Get the order type time as string.                               |
-//| INPUT:  no.                                                      |
-//| OUTPUT: the order type time as string.                           |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-string CTrade::RequestTypeTimeDescription() const
+string CTrade::RequestTypeTimeDescription(void) const
   {
    string str;
 //---
@@ -231,9 +223,6 @@ string CTrade::RequestTypeTimeDescription() const
   }
 //+------------------------------------------------------------------+
 //| Get the result structure.                                        |
-//| INPUT:  result - refernce.                                       |
-//| OUTPUT: no.                                                      |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 void CTrade::Result(MqlTradeResult& result) const
   {
@@ -248,11 +237,8 @@ void CTrade::Result(MqlTradeResult& result) const
   }
 //+------------------------------------------------------------------+
 //| Get the retcode value as string.                                 |
-//| INPUT:  no.                                                      |
-//| OUTPUT: the retcode value as string.                             |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-string CTrade::ResultRetcodeDescription() const
+string CTrade::ResultRetcodeDescription(void) const
   {
    string str;
 //---
@@ -262,9 +248,6 @@ string CTrade::ResultRetcodeDescription() const
   }
 //+------------------------------------------------------------------+
 //| Get the check result structure.                                  |
-//| INPUT:  check_result - reference.                                |
-//| OUTPUT: no.                                                      |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 void CTrade::CheckResult(MqlTradeCheckResult& check_result) const
   {
@@ -280,11 +263,8 @@ void CTrade::CheckResult(MqlTradeCheckResult& check_result) const
   }
 //+------------------------------------------------------------------+
 //| Get the check retcode value as string.                           |
-//| INPUT:  no.                                                      |
-//| OUTPUT: the retcode value as string.                             |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-string CTrade::CheckResultRetcodeDescription() const
+string CTrade::CheckResultRetcodeDescription(void) const
   {
    string str;
    MqlTradeResult result;
@@ -296,18 +276,9 @@ string CTrade::CheckResultRetcodeDescription() const
   }
 //+------------------------------------------------------------------+
 //| Open position.                                                   |
-//| INPUT:  symbol     -symbol for trade,                            |
-//|         order_type -direct for open,                             |
-//|         volume     -volume of position,                          |
-//|         price      -price for open,                              |
-//|         stop       -price of stop loss,                          |
-//|         take       -price of take profit,                        |
-//|         comment    -comment of position.                         |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::PositionOpen(const string symbol,ENUM_ORDER_TYPE order_type,double volume,
-                          double price,double sl,double tp,const string comment)
+bool CTrade::PositionOpen(const string symbol,const ENUM_ORDER_TYPE order_type,const double volume,
+                          const double price,const double sl,const double tp,const string comment)
   {
 //--- check stopped
    if(IsStopped(__FUNCTION__)) return(false);
@@ -332,38 +303,13 @@ bool CTrade::PositionOpen(const string symbol,ENUM_ORDER_TYPE order_type,double 
    m_request.deviation   =m_deviation;
    m_request.type_filling=m_type_filling;
    m_request.comment     =comment;
-//--- variables
-   string action,result;
-//--- order check
-   if(!OrderCheck(m_request,m_check_result))
-     {
-      m_result.retcode=m_check_result.retcode;
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      //--- copy return code
-      return(false);
-     }
-//--- order send
-   if(!OrderSend(m_request,m_result))
-     {
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-   if(m_log_level>LOG_LEVEL_ERRORS)
-      printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-//--- ok
-   return(true);
+//--- action and return the result
+   return(OrderSend(m_request,m_result));
   }
 //+------------------------------------------------------------------+
 //| Modify specified opened position.                                |
-//| INPUT:  symbol -symbol for trade,                                |
-//|         stop   -new price of stop loss,                          |
-//|         take   -new price of take profit,                        |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::PositionModify(const string symbol,double sl,double tp)
+bool CTrade::PositionModify(const string symbol,const double sl,const double tp)
   {
 //--- check stopped
    if(IsStopped(__FUNCTION__)) return(false);
@@ -374,45 +320,19 @@ bool CTrade::PositionModify(const string symbol,double sl,double tp)
    m_request.symbol=symbol;
    m_request.sl    =sl;
    m_request.tp    =tp;
-//--- variables
-   string action,result;
-//--- order check
-   if(!OrderCheck(m_request,m_check_result))
-     {
-      //--- copy return code
-      m_result.retcode=m_check_result.retcode;
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-//--- order send
-   if(!OrderSend(m_request,m_result))
-     {
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-   if(m_log_level>LOG_LEVEL_ERRORS)
-      printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-//--- ok
-   return(true);
+//--- action and return the result
+   return(OrderSend(m_request,m_result));
   }
 //+------------------------------------------------------------------+
 //| Close specified opened position.                                 |
-//| INPUT:  symbol    -symbol for trade,                             |
-//|         deviation -deviation for price close.                    |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::PositionClose(const string symbol,ulong deviation)
+bool CTrade::PositionClose(const string symbol,const ulong deviation)
   {
    bool   partial_close=false;
    int    retry_count  =10;
    uint   retcode      =TRADE_RETCODE_REJECT;
 //--- check stopped
    if(IsStopped(__FUNCTION__)) return(false);
-//--- variables
-   string action,result;
 //--- clean
    ClearStructures();
    do
@@ -454,52 +374,31 @@ bool CTrade::PositionClose(const string symbol,ulong deviation)
         }
       else
          partial_close=false;
-      //--- order check
-      if(!OrderCheck(m_request,m_check_result))
-        {
-         //--- copy return code
-         m_result.retcode=m_check_result.retcode;
-         if(m_log_level>LOG_LEVEL_NO)
-            printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-         return(false);
-        }
       //--- order send
       if(!OrderSend(m_request,m_result))
         {
          if(--retry_count!=0) continue;
          if(retcode==TRADE_RETCODE_DONE_PARTIAL)
             m_result.retcode=retcode;
-         if(m_log_level>LOG_LEVEL_NO)
-            printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
          return(false);
         }
+      //--- WARNING. If position volume exceeds the maximum volume allowed for deal,
+      //--- and when the asynchronous trade mode is on, for safety reasons, position is closed not completely,
+      //--- but partially. It is decreased by the maximum volume allowed for deal.
+      if(m_async_mode) break;
       retcode=TRADE_RETCODE_DONE_PARTIAL;
       if(partial_close) Sleep(1000);
      }
    while(partial_close);
-   if(m_log_level>LOG_LEVEL_ERRORS)
-      printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
 //--- ok
    return(true);
   }
 //+------------------------------------------------------------------+
 //| Installation pending order.                                      |
-//| INPUT:  symbol     -symbol for trade,                            |
-//|         order_type -type of order,                               |
-//|         volume     -volume of order,                             |
-//|         limit_price-limit price for activate order,              |
-//|         price      -price for open,                              |
-//|         sl         -price of stop loss,                          |
-//|         tp         -price of take profit,                        |
-//|         type_time  -type expiration,                             |
-//|         expiration -time expiration,                             |
-//|         comment    -comment of order.                            |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::OrderOpen(const string symbol,ENUM_ORDER_TYPE order_type,double volume,double limit_price,
-                       double price,double sl,double tp,
-                       ENUM_ORDER_TYPE_TIME type_time,datetime expiration,const string comment)
+bool CTrade::OrderOpen(const string symbol,const ENUM_ORDER_TYPE order_type,const double volume,const double limit_price,
+                       const double price,const double sl,const double tp,
+                       const ENUM_ORDER_TYPE_TIME type_time,const datetime expiration,const string comment)
   {
 //--- check stopped
    if(IsStopped(__FUNCTION__)) return(false);
@@ -526,41 +425,14 @@ bool CTrade::OrderOpen(const string symbol,ENUM_ORDER_TYPE order_type,double vol
    m_request.type_time   =type_time;
    m_request.expiration  =expiration;
    m_request.comment     =comment;
-//--- variables
-   string action,result;
-//--- order check
-   if(!OrderCheck(m_request,m_check_result))
-     {
-      //--- copy return code
-      m_result.retcode=m_check_result.retcode;
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-//--- order send
-   if(!OrderSend(m_request,m_result))
-     {
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-   if(m_log_level>LOG_LEVEL_ERRORS)
-      printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-//--- ok
-   return(true);
+//--- action and return the result
+   return(OrderSend(m_request,m_result));
   }
 //+------------------------------------------------------------------+
 //| Modify specified pending order.                                  |
-//| INPUT:  ticket     -ticket for modify,                           |
-//|         price      -new price for open,                          |
-//|         sl         -new price of stop loss,                      |
-//|         tp         -new price of take profit,                    |
-//|         type_time  -new type expiration,                         |
-//|         expiration -new time expiration.                         |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::OrderModify(ulong ticket,double price,double sl,double tp,ENUM_ORDER_TYPE_TIME type_time,datetime expiration)
+bool CTrade::OrderModify(const ulong ticket,const double price,const double sl,const double tp,
+                         const ENUM_ORDER_TYPE_TIME type_time,const datetime expiration)
   {
 //--- check stopped
    if(IsStopped(__FUNCTION__)) return(false);
@@ -574,39 +446,14 @@ bool CTrade::OrderModify(ulong ticket,double price,double sl,double tp,ENUM_ORDE
    m_request.tp          =tp;
    m_request.type_time   =type_time;
    m_request.expiration  =expiration;
-//--- variables
-   string action,result;
-//--- order check
-   if(!OrderCheck(m_request,m_check_result))
-     {
-      //--- copy return code
-      m_result.retcode=m_check_result.retcode;
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-//--- order send
-   if(!OrderSend(m_request,m_result))
-     {
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-   if(m_log_level>LOG_LEVEL_ERRORS)
-      printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-//--- ok
-   return(true);
+//--- action and return the result
+   return(OrderSend(m_request,m_result));
   }
 //+------------------------------------------------------------------+
 //| Delete specified pending order.                                  |
-//| INPUT:  ticket - ticket of order for delete.                     |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::OrderDelete(ulong ticket)
+bool CTrade::OrderDelete(const ulong ticket)
   {
-//--- variables
-   string action,result;
 //--- check stopped
    if(IsStopped(__FUNCTION__)) return(false);
 //--- clean
@@ -614,34 +461,13 @@ bool CTrade::OrderDelete(ulong ticket)
 //--- setting request
    m_request.action    =TRADE_ACTION_REMOVE;
    m_request.order     =ticket;
-//--- order check
-   if(!OrderCheck(m_request,m_check_result))
-     {
-      //--- copy return code
-      m_result.retcode=m_check_result.retcode;
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-//--- order send
-   if(!OrderSend(m_request,m_result))
-     {
-      if(m_log_level>LOG_LEVEL_NO)
-         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-      return(false);
-     }
-   if(m_log_level>LOG_LEVEL_ERRORS)
-      printf(__FUNCTION__+": %s [%s]",FormatRequest(action,m_request),FormatRequestResult(result,m_request,m_result));
-//--- ok
-   return(true);
+//--- action and return the result
+   return(OrderSend(m_request,m_result));
   }
 //+------------------------------------------------------------------+
 //| Output full information of request to log.                       |
-//| INPUT:  no.                                                      |
-//| OUTPUT: no.                                                      |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-void CTrade::PrintRequest() const
+void CTrade::PrintRequest(void) const
   {
    if(m_log_level<LOG_LEVEL_ALL) return;
 //---
@@ -650,11 +476,8 @@ void CTrade::PrintRequest() const
   }
 //+------------------------------------------------------------------+
 //| Output full information of result to log.                        |
-//| INPUT:  no.                                                      |
-//| OUTPUT: no.                                                      |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-void CTrade::PrintResult() const
+void CTrade::PrintResult(void) const
   {
    if(m_log_level<LOG_LEVEL_ALL) return;
 //---
@@ -663,11 +486,8 @@ void CTrade::PrintResult() const
   }
 //+------------------------------------------------------------------+
 //| Clear structures m_request,m_result and m_check_result.          |
-//| INPUT:  no.                                                      |
-//| OUTPUT: no.                                                      |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-void CTrade::ClearStructures()
+void CTrade::ClearStructures(void)
   {
    ZeroMemory(m_request);
    ZeroMemory(m_result);
@@ -675,11 +495,8 @@ void CTrade::ClearStructures()
   }
 //+------------------------------------------------------------------+
 //| Checks forced shutdown of MQL5-program.                          |
-//| INPUT:  function - name of the caller.                           |
-//| OUTPUT: no.                                                      |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::IsStopped(string function)
+bool CTrade::IsStopped(const string function)
   {
    if(!IsStopped()) return(false);
 //--- MQL5 program is stopped
@@ -689,16 +506,8 @@ bool CTrade::IsStopped(string function)
   }
 //+------------------------------------------------------------------+
 //| Buy operation.                                                   |
-//| INPUT:  volume  - volume of position,                            |
-//|         symbol  - symbol for trade,                              |
-//|         price   - price for open,                                |
-//|         sl      - price of stop loss,                            |
-//|         tp      - price of take profit,                          |
-//|         comment - comment of position.                           |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::Buy(double volume,const string symbol=NULL,double price=0.0,double sl=0.0,double tp=0.0,const string comment="")
+bool CTrade::Buy(const double volume,const string symbol=NULL,double price=0.0,const double sl=0.0,const double tp=0.0,const string comment="")
   {
    CSymbolInfo sym;
 //--- check volume
@@ -720,16 +529,8 @@ bool CTrade::Buy(double volume,const string symbol=NULL,double price=0.0,double 
   }
 //+------------------------------------------------------------------+
 //| Sell operation.                                                  |
-//| INPUT:  volume  - volume of position,                            |
-//|         symbol  - symbol for trade,                              |
-//|         price   - price for open,                                |
-//|         sl      - price of stop loss,                            |
-//|         tp      - price of take profit,                          |
-//|         comment - comment of position.                           |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::Sell(double volume,const string symbol=NULL,double price=0.0,double sl=0.0,double tp=0.0,const string comment="")
+bool CTrade::Sell(const double volume,const string symbol=NULL,double price=0.0,const double sl=0.0,const double tp=0.0,const string comment="")
   {
    CSymbolInfo sym;
 //--- check volume
@@ -751,19 +552,9 @@ bool CTrade::Sell(double volume,const string symbol=NULL,double price=0.0,double
   }
 //+------------------------------------------------------------------+
 //| Send BUY_LIMIT order.                                            |
-//| INPUT:  volume     -volume of order,                             |
-//|         price      -price for open,                              |
-//|         symbol     -symbol for trade,                            |
-//|         sl         -price of stop loss,                          |
-//|         tp         -price of take profit,                        |
-//|         type_time  -type expiration,                             |
-//|         expiration -time expiration,                             |
-//|         comment    -comment of order.                            |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::BuyLimit(double volume,double price,const string symbol=NULL,double sl=0.0,double tp=0.0,
-                      ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,const string comment="")
+bool CTrade::BuyLimit(const double volume,const double price,const string symbol=NULL,const double sl=0.0,const double tp=0.0,
+                      const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,const string comment="")
   {
    string sym;
 //--- check volume
@@ -785,19 +576,9 @@ bool CTrade::BuyLimit(double volume,double price,const string symbol=NULL,double
   }
 //+------------------------------------------------------------------+
 //| Send BUY_STOP order.                                             |
-//| INPUT:  volume     -volume of order,                             |
-//|         price      -price for open,                              |
-//|         symbol     -symbol for trade,                            |
-//|         sl         -price of stop loss,                          |
-//|         tp         -price of take profit,                        |
-//|         type_time  -type expiration,                             |
-//|         expiration -time expiration,                             |
-//|         comment    -comment of order.                            |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::BuyStop(double volume,double price,const string symbol=NULL,double sl=0.0,double tp=0.0,
-                     ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,const string comment="")
+bool CTrade::BuyStop(const double volume,const double price,const string symbol=NULL,const double sl=0.0,const double tp=0.0,
+                     const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,const string comment="")
   {
    string sym;
 //--- check volume
@@ -819,19 +600,9 @@ bool CTrade::BuyStop(double volume,double price,const string symbol=NULL,double 
   }
 //+------------------------------------------------------------------+
 //| Send SELL_LIMIT order.                                           |
-//| INPUT:  volume     -volume of order,                             |
-//|         price      -price for open,                              |
-//|         symbol     -symbol for trade,                            |
-//|         sl         -price of stop loss,                          |
-//|         tp         -price of take profit,                        |
-//|         type_time  -type expiration,                             |
-//|         expiration -time expiration,                             |
-//|         comment    -comment of order.                            |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::SellLimit(double volume,double price,const string symbol=NULL,double sl=0.0,double tp=0.0,
-                       ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,const string comment="")
+bool CTrade::SellLimit(const double volume,const double price,const string symbol=NULL,const double sl=0.0,const double tp=0.0,
+                       const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,const string comment="")
   {
    string sym;
 //--- check volume
@@ -853,19 +624,9 @@ bool CTrade::SellLimit(double volume,double price,const string symbol=NULL,doubl
   }
 //+------------------------------------------------------------------+
 //| Send SELL_STOP order.                                            |
-//| INPUT:  volume     -volume of order,                             |
-//|         price      -price for open,                              |
-//|         symbol     -symbol for trade,                            |
-//|         sl         -price of stop loss,                          |
-//|         tp         -price of take profit,                        |
-//|         type_time  -type expiration,                             |
-//|         expiration -time expiration,                             |
-//|         comment    -comment of order.                            |
-//| OUTPUT: true-if successful, false otherwise.                     |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
-bool CTrade::SellStop(double volume,double price,const string symbol=NULL,double sl=0.0,double tp=0.0,
-                      ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,datetime expiration=0,const string comment="")
+bool CTrade::SellStop(const double volume,const double price,const string symbol=NULL,const double sl=0.0,const double tp=0.0,
+                      const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,const string comment="")
   {
    string sym;
 //--- check volume
@@ -887,10 +648,6 @@ bool CTrade::SellStop(double volume,double price,const string symbol=NULL,double
   }
 //+------------------------------------------------------------------+
 //| Converts the position type to text.                              |
-//| INPUT:  str  - receiving string,                                 |
-//|         type - position type.                                    |
-//| OUTPUT: formatted string.                                        |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 string CTrade::FormatPositionType(string& str,const uint type) const
   {
@@ -911,10 +668,6 @@ string CTrade::FormatPositionType(string& str,const uint type) const
   }
 //+------------------------------------------------------------------+
 //| Converts the order type to text.                                 |
-//| INPUT:  str  - receiving string,                                 |
-//|         type - order type.                                       |
-//| OUTPUT: formatted string.                                        |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 string CTrade::FormatOrderType(string& str,const uint type) const
   {
@@ -941,10 +694,6 @@ string CTrade::FormatOrderType(string& str,const uint type) const
   }
 //+------------------------------------------------------------------+
 //| Converts the order filling type to text.                         |
-//| INPUT:  str  - receiving string,                                 |
-//|         type - order filling type.                               |
-//| OUTPUT: formatted string.                                        |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 string CTrade::FormatOrderTypeFilling(string& str,const uint type) const
   {
@@ -955,7 +704,7 @@ string CTrade::FormatOrderTypeFilling(string& str,const uint type) const
      {
       case ORDER_FILLING_RETURN: str="return remainder"; break;
       case ORDER_FILLING_IOC   : str="cancel remainder"; break;
-      case ORDER_FILLING_FOK   : str="all or none";      break;
+      case ORDER_FILLING_FOK   : str="fill or kill";     break;
 
       default:
          str="unknown type filling "+(string)type;
@@ -966,10 +715,6 @@ string CTrade::FormatOrderTypeFilling(string& str,const uint type) const
   }
 //+------------------------------------------------------------------+
 //| Converts the type of order by expiration to text.                |
-//| INPUT:  str  - receiving string,                                 |
-//|         type - type of order by expiration.                      |
-//| OUTPUT: formatted string.                                        |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 string CTrade::FormatOrderTypeTime(string& str,const uint type) const
   {
@@ -992,11 +737,6 @@ string CTrade::FormatOrderTypeTime(string& str,const uint type) const
   }
 //+------------------------------------------------------------------+
 //| Converts the order prices to text.                               |
-//| INPUT:  str           - receiving string,                        |
-//|         price_order   - order price,                             |
-//|         price_trigger - the order trigger price.                 |
-//| OUTPUT: formatted string.                                        |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 string CTrade::FormatOrderPrice(string& str,const double price_order,const double price_trigger,const uint digits) const
   {
@@ -1016,10 +756,6 @@ string CTrade::FormatOrderPrice(string& str,const double price_order,const doubl
   }
 //+------------------------------------------------------------------+
 //| Converts the parameters of a trade request to text.              |
-//| INPUT:  str     - receiving string,                              |
-//|         request - reference at the request structure.            |
-//| OUTPUT: formatted string.                                        |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 string CTrade::FormatRequest(string& str,const MqlTradeRequest& request) const
   {
@@ -1119,11 +855,6 @@ string CTrade::FormatRequest(string& str,const MqlTradeRequest& request) const
   }
 //+------------------------------------------------------------------+
 //| Converts teh result of a request to text.                        |
-//| INPUT:  str     - receiving string,                              |
-//|         request - reference at the request structure,            |
-//|         result  - reference at the request result.               |
-//| OUTPUT: formatted string.                                        |
-//| REMARK: no.                                                      |
 //+------------------------------------------------------------------+
 string CTrade::FormatRequestResult(string& str,const MqlTradeRequest& request,const MqlTradeResult& result) const
   {
@@ -1205,14 +936,38 @@ string CTrade::FormatRequestResult(string& str,const MqlTradeRequest& request,co
    return(str);
   }
 //+------------------------------------------------------------------+
-//| Проверяет правильность заполнения структуры m_request.           |
-//| INPUT:  request - reference at the request structure,            |
-//|         result  - reference at the request result.               |
-//| OUTPUT: true - если правильно, иначе false.                      |
-//| REMARK: no.                                                      |
+//| Checks if the m_request structure is filled correctly.           |
 //+------------------------------------------------------------------+
-bool CTrade::OrderCheck(MqlTradeRequest& m_request,MqlTradeCheckResult& m_check_result)
+bool CTrade::OrderCheck(const MqlTradeRequest& request,MqlTradeCheckResult& check_result)
   {
-   return(::OrderCheck(m_request,m_check_result));
+//--- action and return the result
+   return(::OrderCheck(request,check_result));
+  }
+//+------------------------------------------------------------------+
+//| Send order                                                       |
+//+------------------------------------------------------------------+
+bool CTrade::OrderSend(const MqlTradeRequest& request,MqlTradeResult& result)
+  {
+   bool res;
+   string action="";
+   string fmt   ="";
+//--- action
+   if(m_async_mode)
+      res=OrderSendAsync(request,result);
+   else
+      res=::OrderSend(request,result);
+//--- check
+   if(res)
+     {
+      if(m_log_level>LOG_LEVEL_ERRORS)
+         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,request),FormatRequestResult(fmt,request,result));
+     }
+   else
+     {
+      if(m_log_level>LOG_LEVEL_NO)
+         printf(__FUNCTION__+": %s [%s]",FormatRequest(action,request),FormatRequestResult(fmt,request,result));
+     }
+//--- return the result
+   return(res);
   }
 //+------------------------------------------------------------------+

@@ -42,6 +42,9 @@ public:
    //--- data
    int               Value(void)         const { return(m_value);                }
    void              Value(const int value)    { m_value=value;                  }
+   //--- methods for working with files
+   virtual bool      Save(const int file_handle);
+   virtual bool      Load(const int file_handle);
 
 protected:
    //--- create dependent controls
@@ -119,12 +122,39 @@ bool CCheckBox::CreateLabel(void)
    return(true);
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CCheckBox::Save(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   FileWriteInteger(file_handle,Checked());
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CCheckBox::Load(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   if(!FileIsEnding(file_handle))
+      Checked(FileReadInteger(file_handle));
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
 //| Handler of click on button                                       |
 //+------------------------------------------------------------------+
 bool CCheckBox::OnClickButton(void)
   {
 //--- send the "changed state" event
-   return(EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Handler of click on label                                        |

@@ -43,6 +43,9 @@ public:
    //--- state
    int               Value(void)          const { return(m_value);     }
    bool              Value(int value);
+   //--- methods for working with files
+   virtual bool      Save(const int file_handle);
+   virtual bool      Load(const int file_handle);
 
 protected:
    //--- create dependent controls
@@ -109,6 +112,31 @@ bool CSpinEdit::Value(int value)
      }
 //--- value has not been changed
    return(false);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CSpinEdit::Save(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   FileWriteInteger(file_handle,m_value);
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CSpinEdit::Load(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   if(!FileIsEnding(file_handle))
+      Value(FileReadInteger(file_handle));
+//--- succeed
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Set minimum value                                                |
@@ -193,9 +221,7 @@ bool CSpinEdit::CreateDec(void)
 bool CSpinEdit::OnClickInc(void)
   {
 //--- try to increment current value
-   if(!Value(m_value+1)) return(true);
-//--- if value was changed, send notification
-   return(EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name));
+   return(Value(m_value+1));
   }
 //+------------------------------------------------------------------+
 //| Handler of click on the "decrement" button                       |
@@ -203,9 +229,7 @@ bool CSpinEdit::OnClickInc(void)
 bool CSpinEdit::OnClickDec(void)
   {
 //--- try to decrement current value
-   if(!Value(m_value-1)) return(true);
-//--- if value was changed, send notification
-   return(EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name));
+   return(Value(m_value-1));
   }
 //+------------------------------------------------------------------+
 //| Handler of changing current state                                |
@@ -213,6 +237,10 @@ bool CSpinEdit::OnClickDec(void)
 bool CSpinEdit::OnChangeValue(void)
   {
 //--- copy text to the edit field edit
-   return(m_edit.Text(IntegerToString(m_value)));
+   m_edit.Text(IntegerToString(m_value));
+//--- send notification
+   EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+

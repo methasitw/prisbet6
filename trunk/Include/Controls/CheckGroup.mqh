@@ -23,7 +23,7 @@ private:
    //--- data
    CArrayString      m_strings;             // array of rows
    CArrayLong        m_values;              // array of values
-   long              m_value;               // group value
+   long              m_value;               // current value
    int               m_current;             // index of current row in array of rows
 
 public:
@@ -35,8 +35,12 @@ public:
    virtual bool      OnEvent(const int id,const long& lparam,const double& dparam,const string& sparam);
    //--- fill
    virtual bool      AddItem(const string item,const long value=0);
-   //--- data (read only)
-   long              Value(void)           { return(m_value); }
+   //--- data
+   long              Value(void)            const;
+   bool              Value(long value);
+   //--- methods for working with files
+   virtual bool      Save(const int file_handle);
+   virtual bool      Load(const int file_handle);
 
 protected:
    //--- create dependent controls
@@ -139,6 +143,47 @@ bool CCheckGroup::AddItem(const string item,const long value)
    return(Redraw());
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+long CCheckGroup::Value(void) const
+  {
+   return(m_value);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CCheckGroup::Value(long value)
+  {
+   m_value=value;
+//---
+   return(Redraw());
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CCheckGroup::Save(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   FileWriteLong(file_handle,Value());
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CCheckGroup::Load(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   if(!FileIsEnding(file_handle))
+      Value(FileReadLong(file_handle));
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
 //| Redraw                                                           |
 //+------------------------------------------------------------------+
 bool CCheckGroup::Redraw(void)
@@ -149,7 +194,9 @@ bool CCheckGroup::Redraw(void)
       //--- copy text
       if(!m_rows[i].Text(m_strings.At(i+m_offset))) return(false);
       //--- select
-      if(!RowState(i,(m_current==i+m_offset)))      return(false);
+//      if(!RowState(i,(m_current==i+m_offset)))      return(false);
+      long tmp=m_values.At(i+m_offset);
+      if(!RowState(i,((m_value&tmp)==tmp)))         return(false);
      }
 //--- succeed
    return(true);
@@ -226,9 +273,11 @@ bool CCheckGroup::OnScrollLineDown(void)
 bool CCheckGroup::OnChangeItem(const int index)
   {
 //--- change value
-   if(m_rows[index].Checked())    m_value+=m_values.At(index+m_offset);
-   else                           m_value-=m_values.At(index+m_offset);
+   if(m_rows[index].Checked())    Value(m_value|m_values.At(index+m_offset));
+   else                           Value(m_value&(~m_values.At(index+m_offset)));
 //--- send notification
-   return(EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+

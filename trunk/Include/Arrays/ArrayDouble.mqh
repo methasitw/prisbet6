@@ -40,6 +40,8 @@ public:
    bool              AssignArray(const CArrayDouble *src);
    //--- method of access to the array
    double            At(const int index)                      const;
+   int               Minimum(const int start,const int count) const;
+   int               Maximum(const int start,const int count) const;
    //--- methods of changing
    bool              Update(const int index,const double element);
    bool              Shift(const int index,const int shift);
@@ -316,6 +318,20 @@ double CArrayDouble::At(const int index) const
    if(index<0 || index>=m_data_total) return(DBL_MAX);
 //--- result
    return(m_data[index]);
+  }
+//+------------------------------------------------------------------+
+//| Find minimum of array.                                           |
+//+------------------------------------------------------------------+
+int CArrayDouble::Minimum(const int start,const int count) const
+  {
+   return(ArrayMinimum(m_data,start,count));
+  }
+//+------------------------------------------------------------------+
+//| Find maximum of array.                                           |
+//+------------------------------------------------------------------+
+int CArrayDouble::Maximum(const int start,const int count) const
+  {
+   return(ArrayMaximum(m_data,start,count));
   }
 //+------------------------------------------------------------------+
 //| Updating element in the specified position.                      |

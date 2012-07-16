@@ -40,6 +40,8 @@ public:
    bool              VScrolled(const bool flag);
    bool              HScrolled(void)                             { return(m_h_scrolled);                        }
    bool              HScrolled(const bool flag);
+   //--- state
+   virtual bool      Show(void);
 
 protected:
    //--- create dependent controls
@@ -165,7 +167,7 @@ bool CWndClient::VScrolled(const bool flag)
    else
      {
       //--- delete vertical scrollbar
-      if(!m_scroll_v.Destroy()) return(false);
+      m_scroll_v.Destroy();
       if(!Delete(m_scroll_v))   return(false);
       //--- need to lengthen horizontal scrollbar (if there is one)
       d_size=CONTROLS_SCROLL_SIZE;
@@ -198,7 +200,7 @@ bool CWndClient::HScrolled(const bool flag)
    else
      {
       //--- delete horizontal scrollbar
-      if(!m_scroll_h.Destroy()) return(false);
+      m_scroll_h.Destroy();
       if(!Delete(m_scroll_h))   return(false);
       //--- need to lengthen vertical scrollbar (if there is one)
       d_size=CONTROLS_SCROLL_SIZE;
@@ -210,6 +212,19 @@ bool CWndClient::HScrolled(const bool flag)
       if(!m_scroll_v.Height(m_scroll_v.Height()+d_size))
          return(false);
      }
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//| Makes the control visible                                        |
+//+------------------------------------------------------------------+
+bool CWndClient::Show(void)
+  {
+//--- call of the method of the parent class
+   CWndContainer::Show();
+//---
+   if(!m_v_scrolled) m_scroll_v.Hide();
+   if(!m_h_scrolled) m_scroll_h.Hide();
 //--- succeed
    return(true);
   }

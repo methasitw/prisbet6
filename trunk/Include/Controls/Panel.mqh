@@ -79,23 +79,21 @@ bool CPanel::BorderType(const ENUM_BORDER_TYPE type)
 bool CPanel::OnCreate(void)
   {
 //--- create the chart object by previously set parameters
-   return(m_rectangle.Create(m_chart_id,m_name,m_subwin,m_rect.Left(),m_rect.Top(),m_rect.Width(),m_rect.Height()));
+   return(m_rectangle.Create(m_chart_id,m_name,m_subwin,m_rect.left,m_rect.top,m_rect.Width(),m_rect.Height()));
   }
 //+------------------------------------------------------------------+
 //| Display object on chart                                          |
 //+------------------------------------------------------------------+
 bool CPanel::OnShow(void)
   {
-//--- position the chart object "in place"
-   return(OnMove());
+   return(m_rectangle.Timeframes(OBJ_ALL_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Hide object from chart                                           |
 //+------------------------------------------------------------------+
 bool CPanel::OnHide(void)
   {
-//--- position the chart object beyond the left border of chart
-   return(m_rectangle.X_Distance(CONTROLS_HIDE_X) && m_rectangle.Y_Distance(CONTROLS_HIDE_Y));
+   return(m_rectangle.Timeframes(OBJ_NO_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Absolute movement of the chart object                            |
@@ -103,7 +101,7 @@ bool CPanel::OnHide(void)
 bool CPanel::OnMove(void)
   {
 //--- position the chart object
-   return(m_rectangle.X_Distance(m_rect.Left()) && m_rectangle.Y_Distance(m_rect.Top()));
+   return(m_rectangle.X_Distance(m_rect.left) && m_rectangle.Y_Distance(m_rect.top));
   }
 //+------------------------------------------------------------------+
 //| Resize the chart object                                          |

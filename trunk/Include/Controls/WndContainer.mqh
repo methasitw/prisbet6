@@ -18,7 +18,7 @@ public:
                      CWndContainer(void);
                     ~CWndContainer(void);
    //--- release memory
-   virtual bool      Destroy(void);
+   virtual void      Destroy(const int reason=0);
    //--- chart event handler
    virtual bool      OnEvent(const int id,const long& lparam,const double& dparam,const string& sparam);
    virtual bool      OnMouseEvent(const int x,const int y,const int flags);
@@ -36,6 +36,7 @@ public:
    bool              Delete(CWnd& control);
    //--- geometry
    virtual bool      Move(const int x,const int y);
+   virtual bool      Move(const CPoint& point);
    virtual bool      Shift(const int dx,const int dy);
    //--- ID
    virtual long      Id(const long id);
@@ -108,7 +109,7 @@ CWndContainer::~CWndContainer(void)
 //+------------------------------------------------------------------+
 //| Delete group of controls                                         |
 //+------------------------------------------------------------------+
-bool CWndContainer::Destroy(void)
+void CWndContainer::Destroy(const int reason)
   {
 //--- loop by elements of group
    int total=m_controls.Total();
@@ -120,8 +121,6 @@ bool CWndContainer::Destroy(void)
       control.Destroy();
       m_controls.Delete(0);
      }
-//--- succeed
-   return(true);
   }
 //+------------------------------------------------------------------+
 //| Find control by specified ID                                     |
@@ -237,6 +236,14 @@ bool CWndContainer::Move(const int x,const int y)
    return(Shift(x-Left(),y-Top()));
   }
 //+------------------------------------------------------------------+
+//| Absolute movement of the controls group                          |
+//+------------------------------------------------------------------+
+bool CWndContainer::Move(const CPoint& point)
+  {
+//--- relative movement
+   return(Shift(point.x-Left(),point.y-Top()));
+  }
+//+------------------------------------------------------------------+
 //| Relative movement of the controls group                          |
 //+------------------------------------------------------------------+
 bool CWndContainer::Shift(const int dx,const int dy)
@@ -322,8 +329,7 @@ bool CWndContainer::Show(void)
       CWnd *control=Control(i);
       //--- check of pointer
       if(control==NULL) continue;
-      //--- element will be "visible" only if the group is "visible" and the element is completely "within" this group
-      control.Visible(Contains(control));
+      control.Show();
      }
 //--- call of the method of the parent class
    return(CWnd::Show());

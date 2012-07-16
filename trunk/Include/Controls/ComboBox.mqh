@@ -38,14 +38,25 @@ public:
    //--- fill
    bool              AddItem(const string item,const long value=0);
    //--- set up
-   void              ListViewItems(const int value) { m_view_items=value;     }
+   void              ListViewItems(const int value) { m_view_items=value;           }
    //--- data
-   string            Select(void)                   { return(m_edit.Text());  }
+   virtual bool      ItemAdd(const string item,const long value=0)                    { return(m_list.ItemAdd(item,value));          }
+   virtual bool      ItemInsert(const int index,const string item,const long value=0) { return(m_list.ItemInsert(index,item,value)); }
+   virtual bool      ItemUpdate(const int index,const string item,const long value=0) { return(m_list.ItemUpdate(index,item,value)); }
+   virtual bool      ItemDelete(const int index)                                      { return(m_list.ItemDelete(index));            }
+   virtual bool      ItemsClear(void)                                                 { return(m_list.ItemsClear());                 }
+   //--- data
+   string            Select(void)                   { return(m_edit.Text());        }
    bool              Select(const int index);
    bool              SelectByText(const string text);
    bool              SelectByValue(const long value);
    //--- data (read only)
-   long              Value(void)                    { return(m_list.Value()); }
+   long              Value(void)                    { return(m_list.Value());       }
+   //--- state
+   virtual bool      Show(void);
+   //--- methods for working with files
+   virtual bool      Save(const int file_handle);
+   virtual bool      Load(const int file_handle);
 
 protected:
    //--- create dependent controls
@@ -57,8 +68,8 @@ protected:
    virtual bool      OnClickButton(void);
    virtual bool      OnChangeList(void);
    //--- show drop-down list
-   bool              ListShow(void);
-   bool              ListHide(void);
+   bool              ListShow(void);//                 { return(m_list.Show()); }
+   bool              ListHide(void);//                 { return(m_list.Hide()); }
   };
 //+------------------------------------------------------------------+
 //| Common handler of chart events                                   |
@@ -178,6 +189,42 @@ bool CComboBox::SelectByValue(const long value)
    return(OnChangeList());
   }
 //+------------------------------------------------------------------+
+//| Makes the control visible                                        |
+//+------------------------------------------------------------------+
+bool CComboBox::Show(void)
+  {
+   m_edit.Show();
+   m_drop.Show();
+   m_list.Hide();
+//--- call of the method of the parent class
+   return(CWnd::Show());
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CComboBox::Save(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   FileWriteLong(file_handle,Value());
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CComboBox::Load(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   if(!FileIsEnding(file_handle))
+      SelectByValue(FileReadLong(file_handle));
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
 //| Handler of click on main entry field                             |
 //+------------------------------------------------------------------+
 bool CComboBox::OnClickEdit(void)
@@ -207,7 +254,9 @@ bool CComboBox::OnChangeList(void)
 //--- set text in the main entry field
    m_edit.Text(text);
 //--- send notification
-   return(EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Show the drop-down list                                          |
@@ -215,7 +264,7 @@ bool CComboBox::OnChangeList(void)
 bool CComboBox::ListShow(void)
   {
 //--- show the list
-   return(m_list.Visible(true));
+   return(m_list.Show());
   }
 //+------------------------------------------------------------------+
 //| Hide drop-down list                                              |
@@ -223,6 +272,6 @@ bool CComboBox::ListShow(void)
 bool CComboBox::ListHide(void)
   {
 //--- hide the list
-   return(m_list.Visible(false));
+   return(m_list.Hide());
   }
 //+------------------------------------------------------------------+

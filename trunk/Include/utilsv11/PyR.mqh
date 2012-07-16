@@ -38,7 +38,7 @@ protected:
 	 virtual bool     Main() ;
 	 
  	virtual long      	CheckSignalPyr(long type, bool bEntry);            // check signal
-   virtual long         CheckDistance(long type, bool bEntry);
+   virtual long         CheckDistance(long type);
    virtual double LastDealOpenPrice();
 
   };
@@ -60,9 +60,9 @@ void PyR::~PyR()
    	 m_symbol.Name(m_smb);                  // initialize symbol
    	if (!rm.Init(0,m_smb,tf)) return(false);  // initialize object RiskManagement
    	
-   	  Bands_handle_PYR=iBands(NULL,periodBBPyr,bands_periodPyr,bands_shiftPyr,deviationPyr,PRICE_CLOSE);
-   	  EMAFastMaHandle_PYR=iMA(NULL,periodEMAPyr,InpFastEMAPyr,0,MODE_EMA,PRICE_CLOSE);
-   	  EMASlowMaHandle_PYR=iMA(NULL,periodEMAPyr,InpSlowEMAPyr,0,MODE_EMA,PRICE_CLOSE);
+   	  Bands_handle_PYR=iBands(NULL,periodBB,bands_periodPyr,0,deviationPyr,PRICE_CLOSE);
+   	  EMAFastMaHandle_PYR=iMA(NULL,periodEMA,InpFastEMA,0,MODE_EMA,PRICE_CLOSE);
+   	  EMASlowMaHandle_PYR=iMA(NULL,periodEMA,InpSlowEMA,0,MODE_EMA,PRICE_CLOSE);
 
 	//--- report if there was an error in object creation
 	   if(Bands_handle_PYR<0 || EMAFastMaHandle_PYR < 0 || EMASlowMaHandle_PYR < 0  )
@@ -88,23 +88,22 @@ void PyR::~PyR()
   //------------------------------------------------------------------	
 // calculate the distance necessary to process a new deal
 //------------------------------------------------------------------ 
-  long PyR::CheckDistance(long type, bool bEntry)
+  long PyR::CheckDistance(long type)
 {   
       double atr,cop,apr;
-       
-
-         atr = rm.getN();                                                            // numero de points que tiene que distanciarse
-        // cop = rm.ea.NormalDbl(PositionGetDouble(POSITION_PRICE_OPEN));             // precio de apertura de posicion
+        atr = rm.getN();                                                            // numero de points que tiene que distanciarse
          cop = LastDealOpenPrice();
          apr = rm.ea.BasePrice( type);                                             // precio objetivo actual
 
         if( cop + atr <  rm.ea.BasePrice( type))      
             {  
-                 return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL); 
+               // printf(__FUNCTION__+" cop: " + cop + " atr: " + atr + " BasePrice: " + rm.ea.BasePrice( type) ); 
+                 return(ORDER_TYPE_BUY); 
            }
        else if( cop - atr >  rm.ea.BasePrice( type))
           {       
-               return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for sell
+                //printf(__FUNCTION__+" cop: " + cop + " atr: " + atr + " BasePrice: " + rm.ea.BasePrice( type) ); 
+               return(ORDER_TYPE_SELL);// condition for sell
           }
          return(WRONG_VALUE);
 }
@@ -148,6 +147,7 @@ long PyR::CheckSignalPyr(long type, bool bEntry)
       if(!GetBandsBuffers(Bands_handle_PYR,0,90,Base,Upper,Lower,true)) return (-1);
            if( rm.ea.BasePrice( ORDER_TYPE_BUY) < Lower[0]   )
                {  
+               printf(__FUNCTION__+" precio tocando resistencia" ); 
                      return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL);
                }
 

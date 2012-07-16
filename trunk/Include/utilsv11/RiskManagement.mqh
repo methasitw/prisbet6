@@ -15,6 +15,7 @@
 #include <utilsv11\ServiceFunctions.mqh>
 
 input int ATRPeriod =14;
+input int MultiplyATR = 2;
 input ENUM_TIMEFRAMES TFATR = PERIOD_D1;
 
 class RiskManagement
@@ -48,7 +49,7 @@ public:
    
   
    ulong             DealOpen(long dir,double lot,double SL,double TP);    
-   bool              marginPerformance(int order);
+   long              marginPerformance(int order);
    double            getPips();
    double            getN();
    double            getStopByRisk(long dir, double lot);
@@ -88,7 +89,7 @@ void RiskManagement::RiskManagement()
    if(m_symbol.Digits()==5 || m_symbol.Digits()==3) m_pnt*=10; // 
    
    ExtATRHandle = iATR(NULL,TFATR,ATRPeriod);
-
+   ExtATRHandleWeek = iATR(NULL,PERIOD_W1,52);
    
       if(ExtATRHandle<0 || ExtATRHandleWeek <0 )
      {
@@ -188,29 +189,34 @@ double RiskManagement::getStopByPercent(long dir, double prct)
   
 //------------------------------------------------------------------ 
 //------------------------------------------------------------------   
-bool RiskManagement::marginPerformance(int order)
+long RiskManagement::marginPerformance(int dir)
   {
    double High[],Low[], ATR[];
-   bool returnValue = false;
       
-  
    int high =  CopyHigh(NULL,PERIOD_W1,0,52,High);
-  
-      int low =  CopyLow(NULL,PERIOD_W1,0,52,Low);
+   int low =  CopyLow(NULL,PERIOD_W1,0,52,Low);
   
    
-     if(!CopyBufferAsSeries(ExtATRHandleWeek,0,0,20,true,ATR)) return(-1);
+     if(!CopyBufferAsSeries(ExtATRHandleWeek,0,0,52,true,ATR)) return(-1);
     double atr = ATR[0];
-    double down = Low[ArrayMinimum(Low, 0, WHOLE_ARRAY)] + (3* atr)  ;
-    double up =   High[ArrayMaximum(High, 0, WHOLE_ARRAY)] - (3* atr);
+    double down = Low[ArrayMinimum(Low, 0, WHOLE_ARRAY)] + (MultiplyATR* atr)  ;
+    double up =   High[ArrayMaximum(High, 0, WHOLE_ARRAY)] - (MultiplyATR* atr);
   
-   if ( ea.BasePrice(ORDER_TYPE_BUY) <= down  ||   ea.BasePrice(ORDER_TYPE_SELL) >= up )
+   if ( dir == ORDER_TYPE_BUY && ea.BasePrice(dir) <= down  )
     {
-     Print("El precio "+ ea.BasePrice(ORDER_TYPE_BUY)+" se situa fuera del margen [ "+ Low[ArrayMinimum(Low, 0, WHOLE_ARRAY)]+" : "+High[ArrayMaximum(High, 0, WHOLE_ARRAY)]+" ] " + " atr :" + atr );
-    returnValue = true;
+    printf("" );     
+     Print("El precio " + ea.BasePrice(dir)+ " se situa por debajo del minimo relativo [ " +down+ " ] para la orden de compra [ atr :" + MultiplyATR* atr +" ]" );
+    return ( ORDER_TYPE_BUY);
+
     }
-    else returnValue = false;
-    return (returnValue );
+     if (  dir == ORDER_TYPE_SELL &&  ea.BasePrice(dir) >= up)
+    {
+       printf("" );     
+      Print("El precio " + ea.BasePrice(dir)+ "se situa por encima del maximo realtio [  " +up+ " ] para la orden de venta  [ atr :" + MultiplyATR* atr +" ]" );
+      return (ORDER_TYPE_SELL);
+    }
+    
+return (WRONG_VALUE);
     
   }
 

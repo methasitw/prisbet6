@@ -127,7 +127,9 @@ bool CRadioButton::OnClickButton(void)
       if(!m_button.Pressed(true)) return(false);
      }
 //--- send the "changed state" event
-   return(EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Handler of click on label                                        |

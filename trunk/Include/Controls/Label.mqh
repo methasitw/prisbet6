@@ -64,23 +64,21 @@ bool CLabel::Create(const long chart,const string name,const int subwin,const in
 bool CLabel::OnCreate(void)
   {
 //--- create the chart object by previously set parameters
-   return(m_label.Create(m_chart_id,m_name,m_subwin,m_rect.Left(),m_rect.Top()));
+   return(m_label.Create(m_chart_id,m_name,m_subwin,m_rect.left,m_rect.top));
   }
 //+------------------------------------------------------------------+
 //| Display object on chart                                          |
 //+------------------------------------------------------------------+
 bool CLabel::OnShow(void)
   {
-//--- position the chart object "in place"
-   return(OnMove());
+   return(m_label.Timeframes(OBJ_ALL_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Hide object from chart                                           |
 //+------------------------------------------------------------------+
 bool CLabel::OnHide(void)
   {
-//--- position the chart object beyond the left border of chart
-   return(m_label.X_Distance(CONTROLS_HIDE_X) && m_label.Y_Distance(CONTROLS_HIDE_Y));
+   return(m_label.Timeframes(OBJ_NO_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Absolute movement of the chart object                            |
@@ -88,6 +86,6 @@ bool CLabel::OnHide(void)
 bool CLabel::OnMove(void)
   {
 //--- position the chart object
-   return(m_label.X_Distance(m_rect.Left()) && m_label.Y_Distance(m_rect.Top()));
+   return(m_label.X_Distance(m_rect.left) && m_label.Y_Distance(m_rect.top));
   }
 //+------------------------------------------------------------------+

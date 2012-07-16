@@ -18,25 +18,21 @@ input double deviation= 2.333;         // Standard deviation  // 2.33
 input int InpFastEMA =7;            // InpFastEMA hal
 input int InpSlowEMA = 12 ;         // InpSlowEMA HAL
 
-input int MaxNumberOrders = 2 ;
-input int PeakVolumen = 2;
+input int PeakVolumen      = 5;
 
-input ENUM_TIMEFRAMES periodEMA = PERIOD_M6;
+input ENUM_TIMEFRAMES periodEMA = PERIOD_M10;
 input ENUM_TIMEFRAMES periodBB = PERIOD_H4;
 
 // Variables piramidacion
-input ENUM_TIMEFRAMES periodEMAPyr = PERIOD_M10;
-input ENUM_TIMEFRAMES periodBBPyr = PERIOD_H4;
-//---indicator parameters
 input int bands_periodPyr= 20;        // Bollinger Bands period PYR
 input int bands_shiftPyr = 0;         // Bollinger Bands shift PYR
 input double deviationPyr= 1.66;         // Standard deviation  PYR // 2.33
-input int InpFastEMAPyr =7;            //InpFastEMA PYR
-input int InpSlowEMAPyr = 12 ;         //InpFastEMA PYR
+input int riskPosition = 6;
+       //InpFastEMA PYR
 
 // Variables Risk Management
 input double Risk = 0.02;    // apostamos 90 euros x entrada
-input int    TakeProfit        = 1600; 		// Take Profit distance
+input int    TakeProfit        = 1000; 		// Take Profit distance
 input double volP = 15; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
 
@@ -44,7 +40,7 @@ input double vol = 6;
 class HAL   
   {
 protected:
-   double            sl, tp,  ts ;         
+   double            sl, tp ;         
    int               m_pMA;           // MA period
    int               Bands_handle, EMAFastMaHandle, EMASlowMaHandle ;           
    double      		Base[], Upper[],  Lower[];     //  BASE_LINE, UPPER_BAND and LOWER_BAND  of iBands
@@ -66,6 +62,7 @@ public:
 	virtual long      	CheckSignal(long type, bool bEntry);            // check signal
 	virtual long     	   CheckFilter(long type);  
 	virtual void         Deal(long type, bool pyr); 
+	virtual long      PyrPosition();
 	
   };
 //------------------------------------------------------------------	HAL
@@ -113,40 +110,56 @@ bool HAL::Main()
 	   if(!rm.Main()) return(false); // call function of parent class
 	    if(!pyr.Main()) return(false); // call function of parent class
 	   if(Bars(m_smb,m_tf)<=m_pMA) return(false); // if there are insufficient number of bars
-  
-	   long dir;
+
 	   if (rm.m_account.FreeMargin()<3000) return false;
-	   dir=ORDER_TYPE_SELL;  OpenPosition(dir); ClosePosition(dir); // rm.TrailingPosition(dir,ts);
-	   dir=ORDER_TYPE_BUY;   OpenPosition(dir);  ClosePosition(dir); // rm.TrailingPosition(dir,ts);
+	   
+	 if(!PositionSelect(m_smb)) 
+	 {
+	   OpenPosition(ORDER_TYPE_SELL); 
+       OpenPosition(ORDER_TYPE_BUY); 
+	 }
+	  else 
+         {
+           if(PositionGetDouble(POSITION_VOLUME) <= PeakVolumen)
+					{ 
+					  PyrPosition(); 
+				   }
+				 else{
+				  ClosePosition(PositionGetInteger(POSITION_TYPE));
+				 }
+		}		 
+	   return(true);
+	   
 	   
 	   return(true);
   }
 
-//------------------------------------------------------------------	
-// Open Position
-//------------------------------------------------------------------
-  void HAL::OpenPosition(long dir)
-  {
-// if there is an order, try to pyr
- HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));
-  if( PositionSelect(m_smb) && ( HistoryOrdersTotal()  < MaxNumberOrders)  )
-                     {                    
-                        if(PositionGetInteger(POSITION_TYPE)!=pyr.CheckDistance(PositionGetInteger(POSITION_TYPE), true )) return;
-                                
-                        if(PositionGetInteger(POSITION_TYPE)!=pyr.CheckSignalPyr(PositionGetInteger(POSITION_TYPE), true )) return;
+ long HAL::PyrPosition()
+ 
+ {
+                      
+                       if(PositionGetInteger(POSITION_TYPE)!= pyr.CheckDistance(PositionGetInteger(POSITION_TYPE) )) return 0;        
+                       if(PositionGetInteger(POSITION_TYPE)!=pyr.CheckSignalPyr(PositionGetInteger(POSITION_TYPE), true )) return 0;
                               printf("                       * piramida *  " );
                               printf(__FUNCTION__+ " Precio recorre la distacia adecuada" );
                               printf(__FUNCTION__+ " Dispersion Positiva tocada piramidacion" );
                               printf(__FUNCTION__+ " Number of order by the position " + HistoryOrdersTotal()  );
                   	   Deal(PositionGetInteger(POSITION_TYPE), true);
-                        return ;
-                     }
+return 1;                     	   
 
-    if(PositionSelect(m_smb)) return; 
-    
+ }
+//------------------------------------------------------------------	
+// Open Position
+//------------------------------------------------------------------
+  void HAL::OpenPosition(long dir)
+  {
+   
          if(dir!=CheckSignal(dir, true)) return;// if there is no signal for current direction
          if(dir!=CheckFilter(dir))return;
-          printf(__FUNCTION__+ " ### EMA cruzada  y BB fuera de dispersion ### dir" + dir );      
+        
+           if(dir!=rm.marginPerformance(dir))return; // El Precio no está en un MAX / MIN absoluto  ###
+                         
+             printf(__FUNCTION__+ " ### EMA cruzada  y BB fuera de dispersion ### dir" + dir );      
             Deal(dir, false);
  
   }
@@ -158,13 +171,11 @@ bool HAL::Main()
          if(dir!=PositionGetInteger(POSITION_TYPE)) return;
          if(dir!=CheckSignal(dir, false)) return;
 
-   if(PositionSelect(m_smb))
-      if(PositionGetDouble(POSITION_VOLUME) >= PeakVolumen)
-      {     
+    
          printf(__FUNCTION__+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
          printf(__FUNCTION__+ "POSITION CERRADA: ACCOUNT_BALANCE: "  + AccountInfoDouble(ACCOUNT_BALANCE) +" ACCOUNT_EQUITY: "  + AccountInfoDouble(ACCOUNT_EQUITY));
          rm.m_trade.PositionClose(m_smb,1);
-      }
+
          
   }
 
@@ -198,12 +209,12 @@ long HAL::CheckFilter(long type)
   if(type == ORDER_TYPE_BUY && FastEma[0] > SlowEma[0]) // cambiado
    
    {         
-   printf(__FUNCTION__+ " Ema Cruzada: to buy "   );
+   //printf(__FUNCTION__+ " Ema Cruzada: to buy "   );
     return(ORDER_TYPE_BUY);    }
 
  else if(type == ORDER_TYPE_SELL && FastEma[0] < SlowEma[0])
-    {         
-     printf(__FUNCTION__+ " Ema Cruzada: to sell "   );
+    {       
+    // printf(__FUNCTION__+ " Ema Cruzada: to sell "   );
      return(ORDER_TYPE_SELL);   }
    return(WRONG_VALUE);
 }
@@ -217,15 +228,15 @@ void HAL::Deal(long dir, bool pyramiding)     // eliminado ratio, necesidad de d
  
  double risk = rm.m_account.FreeMargin()*Risk;
 
-   if (risk > 250)
-      risk = 250;
+   if (risk > 1500)
+      risk = 1500;
       
    double pips=rm.getPips();  
    if (pyramiding == true)           //piramida
    {
       
           pips = pips * volP ; // pongo un stop de 3/2 del ATR
-          double riesgo = risk * (6 - HistoryOrdersTotal() ) ;
+          double riesgo = risk * (riskPosition - HistoryOrdersTotal() ) ;
            
            
              double lot =(riesgo + PositionGetDouble(POSITION_PROFIT)) /pips;

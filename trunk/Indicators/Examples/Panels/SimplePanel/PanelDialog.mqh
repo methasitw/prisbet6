@@ -240,7 +240,7 @@ bool CPanelDialog::CreateListView(void)
    m_list_view.Alignment(WND_ALIGN_HEIGHT,0,y1,0,INDENT_BOTTOM);
 //--- fill out with strings
    for(int i=0;i<16;i++)
-      if(!m_list_view.AddItem("Item "+IntegerToString(i)))                         return(false);
+      if(!m_list_view.ItemAdd("Item "+IntegerToString(i)))                         return(false);
 //--- succeed
    return(true);
   }

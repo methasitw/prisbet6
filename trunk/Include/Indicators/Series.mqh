@@ -250,8 +250,6 @@ public:
    void              Size(const int size)      { m_size=size;  }
    //--- methods of access to data
    double            At(int index)                const;
-   int               Minimum(const int start,const int count) const;
-   int               Maximum(const int start,const int count) const;
    //--- method of refreshing of the data buffer
    virtual bool      Refresh(void)             { return(true); }
    virtual bool      RefreshCurrent(void)      { return(true); }
@@ -284,20 +282,6 @@ double CDoubleBuffer::At(int index) const
    double d=CArrayDouble::At(index);
 //---
    return(d);
-  }
-//+------------------------------------------------------------------+
-//| Find minimum of buffer.                                          |
-//+------------------------------------------------------------------+
-int CDoubleBuffer::Minimum(const int start,const int count) const
-  {
-   return(ArrayMinimum(m_data,start,count));
-  }
-//+------------------------------------------------------------------+
-//| Find maximum of buffer.                                          |
-//+------------------------------------------------------------------+
-int CDoubleBuffer::Maximum(const int start,const int count) const
-  {
-   return(ArrayMaximum(m_data,start,count));
   }
 //+------------------------------------------------------------------+
 //| Set symbol and period.                                           |

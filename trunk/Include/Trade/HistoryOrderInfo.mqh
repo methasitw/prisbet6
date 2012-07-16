@@ -317,7 +317,7 @@ string CHistoryOrderInfo::FormatTypeFilling(string& str,const uint type) const
      {
       case ORDER_FILLING_RETURN: str="return remainder"; break;
       case ORDER_FILLING_IOC   : str="cancel remainder"; break;
-      case ORDER_FILLING_FOK   : str="all or none";      break;
+      case ORDER_FILLING_FOK   : str="fill or kill";     break;
 
       default:
          str="unknown type filling "+(string)type;

@@ -32,7 +32,7 @@ private:
 
 protected:
    //--- flags
-   bool              m_panel_flag;           // the "panel in a separate window" flag
+   bool              m_panel_flag;          // the "panel in a separate window" flag
    //--- flags
    bool              m_minimized;           // "create in minimized state" flag
    //--- additional areas
@@ -52,6 +52,9 @@ public:
    //--- fill
    bool              Add(CWnd *control);
    bool              Add(CWnd &control);
+   //--- methods for working with files
+   virtual bool      Save(const int file_handle);
+   virtual bool      Load(const int file_handle);
 
 protected:
    //--- create dependent controls
@@ -65,13 +68,13 @@ protected:
    virtual void      OnClickButtonClose(void);
    //--- access properties of client area
    bool              ClientAreaVisible(const bool visible) { return(m_client_area.Visible(visible)); }
-   int               ClientAreaLeft()                      { return(m_client_area.Left());           }
-   int               ClientAreaTop()                       { return(m_client_area.Top());            }
-   int               ClientAreaRight()                     { return(m_client_area.Right());          }
-   int               ClientAreaBottom()                    { return(m_client_area.Bottom());         }
-   int               ClientAreaWidth()                     { return(m_client_area.Width());          }
-   int               ClientAreaHeight()                    { return(m_client_area.Height());         }
-   //--- обработчики перетаскивания
+   int               ClientAreaLeft(void)            const { return(m_client_area.Left());           }
+   int               ClientAreaTop(void)             const { return(m_client_area.Top());            }
+   int               ClientAreaRight(void)           const { return(m_client_area.Right());          }
+   int               ClientAreaBottom(void)          const { return(m_client_area.Bottom());         }
+   int               ClientAreaWidth(void)           const { return(m_client_area.Width());          }
+   int               ClientAreaHeight(void)          const { return(m_client_area.Height());         }
+   //--- handlers of drag
    virtual bool      OnDialogDragStart(void);
    virtual bool      OnDialogDragProcess(void);
    virtual bool      OnDialogDragEnd(void);
@@ -130,6 +133,39 @@ bool CDialog::Add(CWnd *control)
 bool CDialog::Add(CWnd &control)
   {
    return(m_client_area.Add(control));
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CDialog::Save(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   FileWriteStruct(file_handle,m_norm_rect);
+   FileWriteInteger(file_handle,m_min_rect.left);
+   FileWriteInteger(file_handle,m_min_rect.top);
+   FileWriteInteger(file_handle,m_minimized);
+//--- result
+   return(CWndContainer::Save(file_handle));
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CDialog::Load(const int file_handle)
+  {
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   if(!FileIsEnding(file_handle))
+     {
+      FileReadStruct(file_handle,m_norm_rect);
+      int left=FileReadInteger(file_handle);
+      int top=FileReadInteger(file_handle);
+      m_min_rect.Move(left,top);
+      m_minimized=FileReadInteger(file_handle);
+     }
+//--- result
+   return(CWndContainer::Load(file_handle));
   }
 //+------------------------------------------------------------------+
 //| Create "white border"                                            |
@@ -302,6 +338,7 @@ bool CDialog::OnDialogDragEnd(void)
   {
    if(m_drag_object!=NULL)
      {
+      m_caption.MouseFlags(m_drag_object.MouseFlags());
       delete m_drag_object;
       m_drag_object=NULL;
      }
@@ -337,7 +374,7 @@ public:
                     ~CAppDialog(void);
    //--- main application dialog creation and destroy
    virtual bool      Create(const long chart,const string name,const int subwin,const int x1,const int y1,const int x2,const int y2);
-   virtual bool      Destroy(void);
+   virtual void      Destroy(const int reason=0);
    //--- chart event handler
    virtual bool      OnEvent(const int id,const long &lparam,const double &dparam,const string &sparam);
    //--- dialog run
@@ -346,11 +383,12 @@ public:
    void              ChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam);
    //--- set up
    void              Minimized(const bool flag) { m_minimized=flag;       }
-   //--- для сохранения/восстановления состояния
-   void              SaveIniFile(void);
-   void              LoadIniFile(void);
+   //--- to save/restore state
+   void              IniFileSave(void);
+   void              IniFileLoad(void);
    virtual string    IniFileName(void)    const;
    virtual string    IniFileExt(void)     const { return(".dat");         }
+   virtual bool      Load(const int file_handle);
 
 private:
    bool              CreateCommon(const long chart,const string name,const int subwin);
@@ -370,7 +408,7 @@ protected:
    virtual void      Minimize(void);
    virtual void      Maximize(void);
    string            CreateInstanceId(void);
-   string            ProgramName(void) { return(m_program_name); }
+   string            ProgramName(void)    const { return(m_program_name); }
    void              SubwinOff(void);
   };
 //+------------------------------------------------------------------+
@@ -458,10 +496,10 @@ bool CAppDialog::CreateExpert(const int x1,const int y1,const int x2,const int y
 //--- EA works only in main window
    m_subwin=0;
 //--- geometry for the minimized state
-   m_min_rect.Left(CONTROLS_DIALOG_MINIMIZE_LEFT);
-   m_min_rect.Top(CONTROLS_DIALOG_MINIMIZE_TOP);
-   m_min_rect.Width(CONTROLS_DIALOG_MINIMIZE_WIDTH);
-   m_min_rect.Height(CONTROLS_DIALOG_MINIMIZE_HEIGHT);
+   m_min_rect.SetBound(CONTROLS_DIALOG_MINIMIZE_LEFT,
+                       CONTROLS_DIALOG_MINIMIZE_TOP,
+                       CONTROLS_DIALOG_MINIMIZE_LEFT+CONTROLS_DIALOG_MINIMIZE_WIDTH,
+                       CONTROLS_DIALOG_MINIMIZE_TOP+CONTROLS_DIALOG_MINIMIZE_HEIGHT);
 //--- call method of the parent class
    if(!CDialog::Create(m_chart.ChartId(),m_instance_id,m_subwin,x1,y1,x2,y2))
      {
@@ -479,8 +517,7 @@ bool CAppDialog::CreateIndicator(const int x1,const int y1,const int x2,const in
   {
    int width=m_chart.WidthInPixels();
 //--- geometry for the minimized state
-   m_min_rect.Left(0);
-   m_min_rect.Top(0);
+   m_min_rect.LeftTop(0,0);
    m_min_rect.Width(width);
    m_min_rect.Height(CONTROLS_DIALOG_MINIMIZE_HEIGHT-2*CONTROLS_BORDER_WIDTH);
 //--- determine subwindow
@@ -540,14 +577,15 @@ bool CAppDialog::CreateIndicator(const int x1,const int y1,const int x2,const in
 //+------------------------------------------------------------------+
 //| Application dialog deinitialization function                     |
 //+------------------------------------------------------------------+
-bool CAppDialog::Destroy(void)
+void CAppDialog::Destroy(const int reason)
   {
+   if(reason==REASON_CHARTCHANGE)  IniFileSave();
 //--- detach chart object from chart
    m_chart.Detach();
 //--- call parent destroy
    CDialog::Destroy();
 //--- send message
-   return(EventChartCustom(m_chart_id,ON_APP_CLOSE,m_subwin,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_APP_CLOSE,m_subwin,0.0,m_name);
   }
 //+------------------------------------------------------------------+
 //| Calculate subwindow offset                                       |
@@ -688,8 +726,8 @@ void CAppDialog::OnClickButtonMinMax(void)
 //+------------------------------------------------------------------+
 bool CAppDialog::Rebound(const CRect &rect)
   {
-   if(!Move(rect.Left(),rect.Top()))        return(false);
-   if(!Resize(rect.Width(),rect.Height()))  return(false);
+   if(!Move(rect.LeftTop()))  return(false);
+   if(!Size(rect.Size()))     return(false);
 //--- resize subwindow
    if(m_program_type==PROGRAM_INDICATOR && !IndicatorSetInteger(INDICATOR_HEIGHT,rect.Height()+1))
      {
@@ -739,13 +777,16 @@ void CAppDialog::OnAnotherApplicationClose(const long &lparam,const double &dpar
    if(m_subwin==0)      return;
 //--- exit if external program was closed in main window
    if(lparam==0)        return;
+//--- get subwindow offset
+   SubwinOff();
 //--- exit if external program was closed in subwindow with greater number
    if(lparam>=m_subwin) return;
 //--- after all the checks we must change the subwindow
 //--- get the new number of subwindow
    m_subwin=ChartWindowFind();
 //--- change short name
-   IndicatorSetString(INDICATOR_SHORTNAME,m_program_name+IntegerToString(m_subwin));
+   m_indicator_name=m_program_name+IntegerToString(m_subwin);
+   IndicatorSetString(INDICATOR_SHORTNAME,m_indicator_name);
 //--- change dialog title
    Caption(m_program_name);
 //--- reassign IDs
@@ -754,36 +795,30 @@ void CAppDialog::OnAnotherApplicationClose(const long &lparam,const double &dpar
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void CAppDialog::SaveIniFile(void)
+void CAppDialog::IniFileSave(void)
   {
    string filename=IniFileName()+IniFileExt();
    int handle=FileOpen(filename,FILE_WRITE|FILE_BIN|FILE_ANSI);
 //---
-   if(handle==INVALID_HANDLE)
+   if(handle!=INVALID_HANDLE)
      {
-      printf("Ошибка %d открытия файла '%s' для записи ",GetLastError(),filename);
-      return;
+      Save(handle);
+      FileClose(handle);
      }
-//--- файл нормально открылся
-   Save(handle);
-   FileClose(handle);
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void CAppDialog::LoadIniFile(void)
+void CAppDialog::IniFileLoad(void)
   {
    string filename=IniFileName()+IniFileExt();
    int handle=FileOpen(filename,FILE_READ|FILE_BIN|FILE_ANSI);
 //---
-   if(handle==INVALID_HANDLE)
+   if(handle!=INVALID_HANDLE)
      {
-      printf("Ошибка %d открытия файла '%s' для чтения ",GetLastError(),filename);
-      return;
+      Load(handle);
+      FileClose(handle);
      }
-//--- файл нормально открылся
-   Load(handle);
-   FileClose(handle);
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -799,5 +834,27 @@ string CAppDialog::IniFileName(void) const
    name+="_Ini";
 //---
    return(name);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CAppDialog::Load(const int file_handle)
+  {
+   if(CDialog::Load(file_handle))
+     {
+      if(m_minimized)
+        {
+         m_button_minmax.Pressed(true);
+         Minimize();
+        }
+      else
+        {
+         m_button_minmax.Pressed(false);
+         Maximize();
+        }
+      return(true);
+     }
+//--- failure
+   return(false);
   }
 //+------------------------------------------------------------------+

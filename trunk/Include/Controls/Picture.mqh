@@ -88,23 +88,21 @@ bool CPicture::BmpName(const string name)
 bool CPicture::OnCreate(void)
   {
 //--- create the chart object by previously set parameters
-   return(m_picture.Create(m_chart_id,m_name,m_subwin,m_rect.Left(),m_rect.Top()));
+   return(m_picture.Create(m_chart_id,m_name,m_subwin,m_rect.left,m_rect.top));
   }
 //+------------------------------------------------------------------+
 //| Display object on chart                                          |
 //+------------------------------------------------------------------+
 bool CPicture::OnShow(void)
   {
-//--- position the chart object "in place"
-   return(OnMove());
+   return(m_picture.Timeframes(OBJ_ALL_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Hide object from chart                                           |
 //+------------------------------------------------------------------+
 bool CPicture::OnHide(void)
   {
-//--- position the chart object beyond the left border of chart
-   return(m_picture.X_Distance(CONTROLS_HIDE_X) && m_picture.Y_Distance(CONTROLS_HIDE_Y));
+   return(m_picture.Timeframes(OBJ_NO_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Absolute movement of the chart object                            |
@@ -112,7 +110,7 @@ bool CPicture::OnHide(void)
 bool CPicture::OnMove(void)
   {
 //--- position the chart object
-   return(m_picture.X_Distance(m_rect.Left()) && m_picture.Y_Distance(m_rect.Top()));
+   return(m_picture.X_Distance(m_rect.left) && m_picture.Y_Distance(m_rect.top));
   }
 //+------------------------------------------------------------------+
 //| Set up the chart object                                          |

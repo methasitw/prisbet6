@@ -180,23 +180,21 @@ void CBmpButton::Locking(const bool flag)
 bool CBmpButton::OnCreate(void)
   {
 //--- create the chart object by previously set parameters
-   return(m_button.Create(m_chart_id,m_name,m_subwin,m_rect.Left(),m_rect.Top()));
+   return(m_button.Create(m_chart_id,m_name,m_subwin,m_rect.left,m_rect.top));
   }
 //+------------------------------------------------------------------+
 //| Display object on chart                                          |
 //+------------------------------------------------------------------+
 bool CBmpButton::OnShow(void)
   {
-//--- position the chart object "in place"
-   return(OnMove());
+   return(m_button.Timeframes(OBJ_ALL_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Hide object from chart                                           |
 //+------------------------------------------------------------------+
 bool CBmpButton::OnHide(void)
   {
-//--- position the chart object beyond the left border of chart
-   return(m_button.X_Distance(CONTROLS_HIDE_X) && m_button.Y_Distance(CONTROLS_HIDE_Y));
+   return(m_button.Timeframes(OBJ_NO_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Absolute movement of the chart object                            |
@@ -204,7 +202,7 @@ bool CBmpButton::OnHide(void)
 bool CBmpButton::OnMove(void)
   {
 //--- position the chart object
-   return(m_button.X_Distance(m_rect.Left()) && m_button.Y_Distance(m_rect.Top()));
+   return(m_button.X_Distance(m_rect.left) && m_button.Y_Distance(m_rect.top));
   }
 //+------------------------------------------------------------------+
 //| Set up the chart object                                          |

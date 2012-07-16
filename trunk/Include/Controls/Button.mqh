@@ -86,23 +86,21 @@ void CButton::Locking(const bool flag)
 bool CButton::OnCreate(void)
   {
 //--- create the chart object by previously set parameters
-   return(m_button.Create(m_chart_id,m_name,m_subwin,m_rect.Left(),m_rect.Top(),m_rect.Width(),m_rect.Height()));
+   return(m_button.Create(m_chart_id,m_name,m_subwin,m_rect.left,m_rect.top,m_rect.Width(),m_rect.Height()));
   }
 //+------------------------------------------------------------------+
 //| Display object on chart                                          |
 //+------------------------------------------------------------------+
 bool CButton::OnShow(void)
   {
-//--- position the chart object "in place"
-   return(OnMove());
+   return(m_button.Timeframes(OBJ_ALL_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Hide object from chart                                           |
 //+------------------------------------------------------------------+
 bool CButton::OnHide(void)
   {
-//--- position the chart object beyond the left border of chart
-   return(m_button.X_Distance(CONTROLS_HIDE_X) && m_button.Y_Distance(CONTROLS_HIDE_Y));
+   return(m_button.Timeframes(OBJ_NO_PERIODS));
   }
 //+------------------------------------------------------------------+
 //| Absolute movement of the chart object                            |
@@ -110,7 +108,7 @@ bool CButton::OnHide(void)
 bool CButton::OnMove(void)
   {
 //--- position the chart object
-   return(m_button.X_Distance(m_rect.Left()) && m_button.Y_Distance(m_rect.Top()));
+   return(m_button.X_Distance(m_rect.left) && m_button.Y_Distance(m_rect.top));
   }
 //+------------------------------------------------------------------+
 //| Resize the chart object                                          |

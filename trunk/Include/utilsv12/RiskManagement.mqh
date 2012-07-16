@@ -15,7 +15,7 @@
 #include <utilsv12\ServiceFunctions.mqh>
 
 input int ATRPeriod =14;
-input int MultiplyATR = 3;
+input int MultiplyATR = 2;
 class RiskManagement
   {
 public:
@@ -48,7 +48,7 @@ public:
    virtual void      TrailingPosition(long dir,int TS); // trailing position of Stop Loss
    
    ulong             DealOpen(long dir,double lot,double SL,double TP, bool pyr);    
-   bool              marginPerformance(int order);
+   long              marginPerformance(int order);
    double            getLotN();
    double            getN();
    double            getStopByRisk(long dir, double lot);
@@ -210,10 +210,9 @@ double RiskManagement::getStopByPercent(long dir, double prct)
   
 //------------------------------------------------------------------ 
 //------------------------------------------------------------------   
-bool RiskManagement::marginPerformance(int order)
+long RiskManagement::marginPerformance(int dir)
   {
    double High[],Low[], ATR[];
-   bool returnValue = false;
       
   
    int high =  CopyHigh(NULL,PERIOD_W1,0,52,High);
@@ -226,13 +225,21 @@ bool RiskManagement::marginPerformance(int order)
     double down = Low[ArrayMinimum(Low, 0, WHOLE_ARRAY)] + (MultiplyATR* atr)  ;
     double up =   High[ArrayMaximum(High, 0, WHOLE_ARRAY)] - (MultiplyATR* atr);
   
-   if ( ea.BasePrice(ORDER_TYPE_BUY) <= down  ||   ea.BasePrice(ORDER_TYPE_SELL) >= up )
+   if ( ea.BasePrice(dir) >= down  )
     {
-     Print("El precio "+ ea.BasePrice(ORDER_TYPE_BUY)+" se situa fuera del margen [ "+ Low[ArrayMinimum(Low, 0, WHOLE_ARRAY)]+" : "+High[ArrayMaximum(High, 0, WHOLE_ARRAY)]+" ] " + " atr :" + atr );
-    returnValue = true;
+      Print("" );
+     Print("El precio " + ea.BasePrice(dir)+ " se situa por encima del minimo [ " +down+ " ] para la orden de venta [ atr :" + MultiplyATR* atr +" ]" );
+    return (ORDER_TYPE_SELL );
+
     }
-    else returnValue = false;
-    return (returnValue );
+    else if (   ea.BasePrice(dir) <= up)
+    {
+       Print("" );
+      Print("El precio " + ea.BasePrice(dir)+ "se situa por debajo del maximo [  " +up+ " ] para la orden de compra  [ atr :" + MultiplyATR* atr +" ]" );
+      return (ORDER_TYPE_BUY);
+    }
+    
+else{return (WRONG_VALUE);}
     
   }
 

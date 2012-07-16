@@ -34,8 +34,13 @@ public:
    virtual bool      OnEvent(const int id,const long& lparam,const double& dparam,const string& sparam);
    //--- fill
    virtual bool      AddItem(const string item,const long value=0);
-   //--- data (read only)
-   long              Value(void)       { return(m_values.At(m_current)); }
+   //--- data
+   long              Value(void)            const { return(m_values.At(m_current)); }
+   bool              Value(const long value);
+   bool              ValueCheck(long value) const;
+   //--- methods for working with files
+   virtual bool      Save(const int file_handle);
+   virtual bool      Load(const int file_handle);
 
 protected:
    //--- create dependent controls
@@ -116,9 +121,13 @@ bool CRadioGroup::CreateButton(const int index)
 //+------------------------------------------------------------------+
 bool CRadioGroup::AddItem(const string item,const long value)
   {
+//--- check value
+   if(value!=0 && !ValueCheck(value)) return(false);
+     {
+     }
 //--- add
-   if(!m_strings.Add(item)) return(false);
-   if(!m_values.Add(value)) return(false);
+   if(!m_strings.Add(item))          return(false);
+   if(!m_values.Add(value))          return(false);
 //--- number of items
    int total=m_strings.Total();
 //--- exit if number of items does not exceed the size of visible area
@@ -127,15 +136,68 @@ bool CRadioGroup::AddItem(const string item,const long value)
    if(total==m_total_view+1)
      {
       //--- enable vertical scrollbar
-      if(!VScrolled(true)) return(false);
+      if(!VScrolled(true))           return(false);
       //--- and immediately make it invisible (if needed)
-      if(!IS_VISIBLE)      m_scroll_v.Visible(false);
+      if(!IS_VISIBLE)                m_scroll_v.Visible(false);
       
      }
 //--- set up the scrollbar
    m_scroll_v.MaxPos(m_strings.Total()-m_total_view);
 //--- redraw
    return(Redraw());
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CRadioGroup::Value(const long value)
+  {
+//--- значение должно присутствовать в наборе
+   int total=m_values.Total();
+//---
+   for(int i=0;i<total;i++)
+//      RowState(i-m_current,(m_values.At(i)==value));   // проверить
+      if(m_values.At(i)==value)
+         Select(i+m_offset);
+//---
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CRadioGroup::ValueCheck(long value) const
+  {
+//--- проверяемое значение не должно дублировать уже существующее
+   int total=m_values.Total();
+//---
+   for(int i=0;i<total;i++)
+      if(m_values.At(i)==value) return(false);
+//---
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CRadioGroup::Save(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   FileWriteLong(file_handle,Value());
+//--- succeed
+   return(true);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CRadioGroup::Load(const int file_handle)
+  {
+//--- check
+   if(file_handle==INVALID_HANDLE) return(false);
+//---
+   if(!FileIsEnding(file_handle))
+      Value(FileReadLong(file_handle));
+//--- succeed
+   return(true);
   }
 //+------------------------------------------------------------------+
 //| Sett current item                                                |
@@ -239,6 +301,8 @@ bool CRadioGroup::OnChangeItem(const int index)
 //--- select "row"
    Select(index+m_offset);
 //--- send notification
-   return(EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name));
+   EventChartCustom(m_chart_id,ON_CHANGE,m_id,0.0,m_name);
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+

@@ -36,7 +36,7 @@ int OnInit()
 void OnDeinit(const int reason)
   {
 //--- destroy application dialog
-   ExtDialog.Destroy();
+   ExtDialog.Destroy(reason);
   }
 //+------------------------------------------------------------------+
 //| Custom indicator iteration function                              |

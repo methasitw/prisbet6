@@ -254,7 +254,7 @@ bool CPanelDialog::FillSymbols(void)
   {
    int total=SymbolsTotal(true);
    for(int i=0;i<total;i++)
-      if(!m_symbols.AddItem(SymbolName(i,true)))                           return(false);
+      if(!m_symbols.ItemAdd(SymbolName(i,true)))                           return(false);
 //--- succeed
    return(true);
   }
@@ -263,27 +263,27 @@ bool CPanelDialog::FillSymbols(void)
 //+------------------------------------------------------------------+
 bool CPanelDialog::FillPeriods(void)
   {
-   if(!m_periods.AddItem("M1",PERIOD_M1))                                  return(false);
-   if(!m_periods.AddItem("M2",PERIOD_M2))                                  return(false);
-   if(!m_periods.AddItem("M3",PERIOD_M3))                                  return(false);
-   if(!m_periods.AddItem("M4",PERIOD_M4))                                  return(false);
-   if(!m_periods.AddItem("M5",PERIOD_M5))                                  return(false);
-   if(!m_periods.AddItem("M6",PERIOD_M6))                                  return(false);
-   if(!m_periods.AddItem("M10",PERIOD_M10))                                return(false);
-   if(!m_periods.AddItem("M12",PERIOD_M12))                                return(false);
-   if(!m_periods.AddItem("M15",PERIOD_M15))                                return(false);
-   if(!m_periods.AddItem("M20",PERIOD_M20))                                return(false);
-   if(!m_periods.AddItem("M30",PERIOD_M30))                                return(false);
-   if(!m_periods.AddItem("H1",PERIOD_H1))                                  return(false);
-   if(!m_periods.AddItem("H2",PERIOD_H2))                                  return(false);
-   if(!m_periods.AddItem("H3",PERIOD_H3))                                  return(false);
-   if(!m_periods.AddItem("H4",PERIOD_H4))                                  return(false);
-   if(!m_periods.AddItem("H6",PERIOD_H6))                                  return(false);
-   if(!m_periods.AddItem("H8",PERIOD_H8))                                  return(false);
-   if(!m_periods.AddItem("H12",PERIOD_H12))                                return(false);
-   if(!m_periods.AddItem("Day",PERIOD_D1))                                 return(false);
-   if(!m_periods.AddItem("Week",PERIOD_W1))                                return(false);
-   if(!m_periods.AddItem("Month",PERIOD_MN1))                              return(false);
+   if(!m_periods.ItemAdd("M1",PERIOD_M1))                                  return(false);
+   if(!m_periods.ItemAdd("M2",PERIOD_M2))                                  return(false);
+   if(!m_periods.ItemAdd("M3",PERIOD_M3))                                  return(false);
+   if(!m_periods.ItemAdd("M4",PERIOD_M4))                                  return(false);
+   if(!m_periods.ItemAdd("M5",PERIOD_M5))                                  return(false);
+   if(!m_periods.ItemAdd("M6",PERIOD_M6))                                  return(false);
+   if(!m_periods.ItemAdd("M10",PERIOD_M10))                                return(false);
+   if(!m_periods.ItemAdd("M12",PERIOD_M12))                                return(false);
+   if(!m_periods.ItemAdd("M15",PERIOD_M15))                                return(false);
+   if(!m_periods.ItemAdd("M20",PERIOD_M20))                                return(false);
+   if(!m_periods.ItemAdd("M30",PERIOD_M30))                                return(false);
+   if(!m_periods.ItemAdd("H1",PERIOD_H1))                                  return(false);
+   if(!m_periods.ItemAdd("H2",PERIOD_H2))                                  return(false);
+   if(!m_periods.ItemAdd("H3",PERIOD_H3))                                  return(false);
+   if(!m_periods.ItemAdd("H4",PERIOD_H4))                                  return(false);
+   if(!m_periods.ItemAdd("H6",PERIOD_H6))                                  return(false);
+   if(!m_periods.ItemAdd("H8",PERIOD_H8))                                  return(false);
+   if(!m_periods.ItemAdd("H12",PERIOD_H12))                                return(false);
+   if(!m_periods.ItemAdd("Day",PERIOD_D1))                                 return(false);
+   if(!m_periods.ItemAdd("Week",PERIOD_W1))                                return(false);
+   if(!m_periods.ItemAdd("Month",PERIOD_MN1))                              return(false);
 //--- succeed
    return(true);
   }

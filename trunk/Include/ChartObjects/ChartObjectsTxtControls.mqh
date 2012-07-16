@@ -375,20 +375,22 @@ public:
                      CChartObjectEdit(void);
                     ~CChartObjectEdit(void);
    //--- methods of access to properties of the object
-   bool              X_Size(const int X)                const;
-   bool              Y_Size(const int Y)                const;
-   color             BackColor(void)                    const;
-   bool              BackColor(const color new_color)   const;
-   color             BorderColor(void)                  const;
-   bool              BorderColor(const color new_color) const;
-   bool              ReadOnly(void)                     const;
-   bool              ReadOnly(const bool flag)          const;
+   bool              X_Size(const int X)                    const;
+   bool              Y_Size(const int Y)                    const;
+   color             BackColor(void)                        const;
+   bool              BackColor(const color new_color)       const;
+   color             BorderColor(void)                      const;
+   bool              BorderColor(const color new_color)     const;
+   bool              ReadOnly(void)                         const;
+   bool              ReadOnly(const bool flag)              const;
+   ENUM_ALIGN_MODE   TextAlign(void)                        const;
+   bool              TextAlign(const ENUM_ALIGN_MODE align) const;
    //--- change of angle is blocked
-   bool              Angle(const double angle)          const { return(false);    }
+   bool              Angle(const double angle)              const { return(false);    }
    //--- method of creating the object
    bool              Create(long chart_id,const string name,const int window,const int X,const int Y,const int sizeX,const int sizeY);
    //--- method of identifying the object
-   virtual int       Type(void)                         const { return(OBJ_EDIT); }
+   virtual int       Type(void)                             const { return(OBJ_EDIT); }
    //--- methods for working with files
    virtual bool      Save(const int file_handle);
    virtual bool      Load(const int file_handle);
@@ -498,6 +500,26 @@ bool CChartObjectEdit::ReadOnly(const bool flag) const
    if(m_chart_id==-1) return(false);
 //--- result
    return(ObjectSetInteger(m_chart_id,m_name,OBJPROP_READONLY,flag));
+  }
+//+------------------------------------------------------------------+
+//| Get the "Align" property.                                        |
+//+------------------------------------------------------------------+
+ENUM_ALIGN_MODE CChartObjectEdit::TextAlign(void) const
+  {
+//--- checking
+   if(m_chart_id==-1) return(false);
+//--- result
+   return((ENUM_ALIGN_MODE)ObjectGetInteger(m_chart_id,m_name,OBJPROP_ALIGN));
+  }
+//+------------------------------------------------------------------+
+//| Set the "Align" property.                                        |
+//+------------------------------------------------------------------+
+bool CChartObjectEdit::TextAlign(const ENUM_ALIGN_MODE align) const
+  {
+//--- checking
+   if(m_chart_id==-1) return(false);
+//--- result
+   return(ObjectSetInteger(m_chart_id,m_name,OBJPROP_ALIGN,align));
   }
 //+------------------------------------------------------------------+
 //| Writing parameters of object to file.                            |
