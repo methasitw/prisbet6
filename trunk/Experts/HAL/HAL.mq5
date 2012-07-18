@@ -12,26 +12,30 @@
 
 
 //---indicator parameters
-input int bands_period= 90;        // Bollinger Bands period
-input double deviation= 2.333;         // Standard deviation  // 2.33
+input int bands_period= 90;                  // Bollinger Bands period
+input double deviation= 2.333;               // Standard deviation  // 2.33
 
-input int InpFastEMA =7;            // InpFastEMA hal
-input int InpSlowEMA = 12 ;         // InpSlowEMA HAL
+input int InpFastEMA =7;                     // InpFastEMA hal
+input int InpSlowEMA = 12 ;                  // InpSlowEMA HAL
 
 input int PeakVolumen      = 5;
 
-input ENUM_TIMEFRAMES periodEMA = PERIOD_M10;
-input ENUM_TIMEFRAMES periodBB = PERIOD_H4;
+
+input int ATRPeriod =14;                         // para calcular el numero de pips adecuados para entrar en el mercado     
+
+input ENUM_TIMEFRAMES TFATR = PERIOD_D1;        // periodo para calcular el maximo y minimo anual
+
+
+input ENUM_TIMEFRAMES periodEMA = PERIOD_M6;    // periodo para el filtro  
+input ENUM_TIMEFRAMES periodBB = PERIOD_H4;     // periodo para la señal
 
 // Variables piramidacion
-input int bands_periodPyr= 20;        // Bollinger Bands period PYR
-input int bands_shiftPyr = 0;         // Bollinger Bands shift PYR
+input int bands_periodPyr= 20;            // Bollinger Bands period PYR
 input double deviationPyr= 1.66;         // Standard deviation  PYR // 2.33
 input int riskPosition = 6;
-       //InpFastEMA PYR
 
 // Variables Risk Management
-input double Risk = 0.02;    // apostamos 90 euros x entrada
+input double Risk = 0.05;    // apostamos 90 euros x entrada
 input int    TakeProfit        = 1000; 		// Take Profit distance
 input double volP = 15; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
@@ -65,6 +69,7 @@ public:
 	virtual long      PyrPosition();
 	
   };
+  
 //------------------------------------------------------------------	HAL
 void HAL::HAL() { }
 //------------------------------------------------------------------	~HAL
@@ -74,6 +79,7 @@ void HAL::~HAL()
    IndicatorRelease(EMAFastMaHandle); 
    IndicatorRelease(EMASlowMaHandle); 
   }
+  
 //------------------------------------------------------------------	
 //    Init
 //------------------------------------------------------------------	
@@ -86,8 +92,6 @@ bool HAL::Init(string smb,ENUM_TIMEFRAMES tf)
 	if (!pyr.Init(0,m_smb,tf)) return(false);  // initialize object RiskManagement
 	
 	      tp=TakeProfit;   sl=-1;
-
-   	//--- creation of the indicator iBands
    	   Bands_handle=iBands(NULL,periodBB,bands_period,0,deviation,PRICE_CLOSE);
    	   EMAFastMaHandle=iMA(NULL,periodEMA,InpFastEMA,0,MODE_EMA,PRICE_CLOSE);
    	   EMASlowMaHandle=iMA(NULL,periodEMA,InpSlowEMA,0,MODE_EMA,PRICE_CLOSE);
@@ -101,12 +105,12 @@ bool HAL::Init(string smb,ENUM_TIMEFRAMES tf)
 
 	   return(true);                         // "trade allowed"
   }
+  
 //------------------------------------------------------------------	
 //    Mainfunction
 //------------------------------------------------------------------	
 bool HAL::Main()
   {
- //sfsdfgsdfg/
 	   if(!rm.Main()) return(false); // call function of parent class
 	    if(!pyr.Main()) return(false); // call function of parent class
 	   if(Bars(m_smb,m_tf)<=m_pMA) return(false); // if there are insufficient number of bars
@@ -129,10 +133,8 @@ bool HAL::Main()
 				 }
 		}		 
 	   return(true);
-	   
-	   
-	   return(true);
   }
+  
 
  long HAL::PyrPosition()
  
@@ -153,15 +155,12 @@ return 1;
 //------------------------------------------------------------------
   void HAL::OpenPosition(long dir)
   {
-   
+    
          if(dir!=CheckSignal(dir, true)) return;// if there is no signal for current direction
          if(dir!=CheckFilter(dir))return;
-        
-           if(dir!=rm.marginPerformance(dir))return; // El Precio no está en un MAX / MIN absoluto  ###
-                         
-             printf(__FUNCTION__+ " ### EMA cruzada  y BB fuera de dispersion ### dir" + dir );      
-            Deal(dir, false);
- 
+      //    if(dir!=rm.marginPerformance(dir))return; // El Precio no está en un MAX / MIN absoluto  ###
+         printf(__FUNCTION__+ " ### EMA cruzada  y BB fuera de dispersion ### dir" + dir );      
+         Deal(dir, false);
   }
  //------------------------------------------------------------------	
 // Close Position if the price touch the bollinger bands an the volumen is more than PeakVolumen
@@ -255,7 +254,7 @@ void HAL::Deal(long dir, bool pyramiding)     // eliminado ratio, necesidad de d
      
             pips = pips * vol; // multiplicamos x 6
             double lot = risk /pips ;
-            printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot);
+            printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips/10  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot);
             rm.DealOpen(dir,lot, pips/10, tp);
     }
  }   
