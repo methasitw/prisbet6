@@ -48,7 +48,7 @@ public:
    virtual bool Init(long magic,string smb,ENUM_TIMEFRAMES tf);
    virtual bool Main();
 
-   
+   long           getNVince();
    ulong             DealOpen(long dir,double lot,double SL,double TP);    
    long              marginPerformance(int order, double margin, bool bEntry);
    long              MaxMinAbsolut(long dir);
@@ -182,9 +182,28 @@ long RiskManagement::marginPerformance(int dir, double margin, bool bEntry)
     return(WRONG_VALUE);
   }
 
-  
-  
+  /*
+  Reducción Absoluta de la Equidad:			13 537,00		
 
+  
+  */
+  
+long RiskManagement::getNVince()
+{
+//N = [(1 + 8 * Equity / Delta) 0,5 +1] / 2
+//Delta neutro = DD / 2
+//N =  [ 1+ (1 + 8 * 50.000 / 7.000) ^ 0,5 ] / 2 = 4 contratos.
+
+long Equity = m_account.FreeMargin();
+long DeltaNeutro = DD/2;
+long value = 1 + 8*(Equity/DeltaNeutro );
+long valuesqrt = sqrt(value);
+long N = 1 + ( valuesqrt / 2);
+
+ Print(__FUNCTION__+" El Equity "+ Equity+"  DeltaNeutro: " +DeltaNeutro+ " N: " + N + " value" + value  + " valuesqrt "  + valuesqrt );
+ 
+ return N;
+}
   
   
 
