@@ -14,9 +14,6 @@
 #include <Trade\Trade.mqh>
 #include <utilsv11\ServiceFunctions.mqh>
 
-input int ATRPeriod =14;
-input int MultiplyATR = 2;
-input ENUM_TIMEFRAMES TFATR = PERIOD_D1;
 
 class RiskManagement
   {
@@ -144,48 +141,9 @@ void RiskManagement::RiskManagement()
   }
   
 
-//------------------------------------------------------------------ 
-//------------------------------------------------------------------   
-double RiskManagement::getStopByRisk(long dir, double lot)
-{
-   double sl,apr,csl,cop,ctp;
-    if(!PositionSelect(m_smb)) return -2;        							             // if there is no positions or error, then exit
-   m_symbol.Refresh(); m_symbol.RefreshRates();                                     // update symbol parameters
-    double Margin = (m_account.FreeMargin()*0.05+PositionGetDouble(POSITION_PROFIT));
-    double totalVolumen   =  (PositionGetDouble(POSITION_VOLUME) + lot ) ;       
-	double Puntos = Margin /(totalVolumen * 10);   //10 dolares x punto
-	printf(__FUNCTION__+ " Margin: " +Margin+ " totalVolumen " + totalVolumen + " puntos " + Puntos);
 
-   double StopLvl=m_symbol.StopsLevel()*m_symbol.Point();                      // Stop Level
-   double FreezLvl=m_symbol.FreezeLevel()*m_symbol.Point();                 // Freeze level
-   apr=ea.ReversPrice(dir);                                          
-   cop=ea.NormalDbl(PositionGetDouble(POSITION_PRICE_OPEN));          // price of position opening
-   csl=ea.NormalDbl(PositionGetDouble(POSITION_SL));                  // Stop Loss
-   ctp=ea.NormalDbl(PositionGetDouble(POSITION_TP));                // Take Profit
 
-  if(MathAbs(ctp-apr)<=FreezLvl || MathAbs(csl-apr)<=FreezLvl) return -3;          // check freeze level
-   
-   sl=ea.NormalSL(dir,apr,apr,Puntos,StopLvl);                                                                                                                                                                                               // calculate Stop Loss
-   
- printf(__FUNCTION__+ " Reverse price " + apr + " NEW Stop Loss: " +sl+ " price of position opening: " + cop + " Stop Loss: " + csl);
-   if((dir==ORDER_TYPE_BUY &&  (sl>cop && (sl>csl )))  || (dir==ORDER_TYPE_SELL  && (sl<cop && (sl<csl ))))
-     {
-		return sl;
-     }
-     else return csl;
-     
-	return -4;
-  }
 
-//------------------------------------------------------------------ 
-//------------------------------------------------------------------ 
-double RiskManagement::getStopByPercent(long dir, double prct)
-{							             // if there is no positions or error, then exit
-   m_symbol.Refresh(); m_symbol.RefreshRates();                                     // update symbol parameters
-   double sl = (MathAbs(1 - ea.BasePrice(dir)) * (prct)*10);      
-	printf(__FUNCTION__+ " El stop correspondiente a el 0.008 % del precio es : " + sl  );
-  return sl;
-  }
   
 //------------------------------------------------------------------ 
 //------------------------------------------------------------------   
@@ -193,26 +151,28 @@ long RiskManagement::marginPerformance(int dir)
   {
    double High[],Low[], ATR[];
       
-   int high =  CopyHigh(NULL,PERIOD_W1,0,52,High);
-   int low =  CopyLow(NULL,PERIOD_W1,0,52,Low);
-  
+   int high =  CopyHigh(NULL,PERIOD_W1,0,ATRPeriod,High);
+   int low =  CopyLow(NULL,PERIOD_W1,0,ATRPeriod,Low);
+
    
-     if(!CopyBufferAsSeries(ExtATRHandleWeek,0,0,52,true,ATR)) return(-1);
+     if(!CopyBufferAsSeries(ExtATRHandleWeek,0,0,ATRPeriod,true,ATR)) return(-1);
     double atr = ATR[0];
-    double down = Low[ArrayMinimum(Low, 0, WHOLE_ARRAY)] + (MultiplyATR* atr)  ;
-    double up =   High[ArrayMaximum(High, 0, WHOLE_ARRAY)] - (MultiplyATR* atr);
+    double down = Low[ArrayMinimum(Low, 0, WHOLE_ARRAY)] +( atr/2)  ;
+    double up =   High[ArrayMaximum(High, 0, WHOLE_ARRAY)] - ( atr/2);
+   
+   Print("El precio " + ea.BasePrice(dir)+ " se situa por encima del maximo relativo [  " +up+ " ] para la orden de venta  [ atr :" +  atr/2 +" ]" );
   
    if ( dir == ORDER_TYPE_BUY && ea.BasePrice(dir) <= down  )
     {
     printf("" );     
-     Print("El precio " + ea.BasePrice(dir)+ " se situa por debajo del minimo relativo [ " +down+ " ] para la orden de compra [ atr :" + MultiplyATR* atr +" ]" );
+    Print("El precio " + ea.BasePrice(dir)+ " se situa por debajo del minimo relativo [ " +down+ " ] para la orden de compra [ atr :" +  atr/2 +" ]" );
     return ( ORDER_TYPE_BUY);
-
     }
-     if (  dir == ORDER_TYPE_SELL &&  ea.BasePrice(dir) >= up)
+    
+   else if (  dir == ORDER_TYPE_SELL &&  ea.BasePrice(dir) >= up)
     {
-       printf("" );     
-      Print("El precio " + ea.BasePrice(dir)+ "se situa por encima del maximo realtio [  " +up+ " ] para la orden de venta  [ atr :" + MultiplyATR* atr +" ]" );
+      printf("" );     
+      Print("El precio " + ea.BasePrice(dir)+ " se situa por encima del maximo relativo [  " +up+ " ] para la orden de venta  [ atr :" +  atr/2 +" ]" );
       return (ORDER_TYPE_SELL);
     }
     
@@ -241,7 +201,7 @@ return (WRONG_VALUE);
   double RiskManagement::getN()
   {
    double atr = 0.0;
-   if(!CopyBufferAsSeries(ExtATRHandle,0,0,14,true,ATR)) return(-1);
+   if(!CopyBufferAsSeries(ExtATRHandle,0,0,ATRPeriod,true,ATR)) return(-1);
     atr = ATR[0];
     return(atr);
   }

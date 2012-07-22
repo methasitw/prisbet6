@@ -22,10 +22,11 @@ input ENUM_TIMEFRAMES period = PERIOD_H1;
 
 
 // risk management
-input double volP = 15; // volatilidad que arriesgamos en la entrada
+input double volP = 12; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
-input double risk = 0.15; // cantidad de la cuenta
-input int MaxNOrders = 3;
+input double risk = 0.05; // cantidad de la cuenta
+input int MaxNOrders = 2;
+input int DD = 10500;
 
 
 class LaMotta   
@@ -59,7 +60,7 @@ public:
 	// to piramiding
 	 long      	   CheckSignalPyr(long type, bool bEntry);            // check signal
 
-	 long     	   CheckFilterPyr(long type);  
+	// long     	   CheckFilterPyr(long type);  
     long          CheckDistance(long type, bool bEntry);
     double        LastDealOpenPrice();
     
@@ -268,8 +269,9 @@ void LaMotta::Deal(long dir, int order,bool pyramiding)     // eliminado ratio, 
           
     double totalVolumen   =  (PositionGetDouble(POSITION_VOLUME) + lot ) ;           
     printf(__FUNCTION__+ " Posicionamos con un stop de  " + pips/10  + " pips. Volumen de deal " +lot+ " totalVolumen : "+totalVolumen+" Risk : "  + pips* lot );
-               
+          lot = rm.getNVince();     
     rm.DealOpen(dir,lot,pips/10,tp);
+     
    }
    
    else
@@ -282,10 +284,13 @@ void LaMotta::Deal(long dir, int order,bool pyramiding)     // eliminado ratio, 
               if ( lot   > 5.0 )
                       lot = lot = 5.0;
                       
-            printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips/10  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot);
+            printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips/10  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot + " rm.getNVince() " +  rm.getNVince() );
+          lot=  rm.getNVince();
             rm.DealOpen(dir,lot, pips/10, tp);
             
+            
     }
+   
  }   
  /*
  -------------------------FUNCIONES PIRAMIDACION --------------------------
