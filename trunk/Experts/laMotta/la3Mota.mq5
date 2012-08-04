@@ -12,7 +12,7 @@ input int bands_period     = 90;            // Bollinger Bands period
 input double deviation     = 2.33;          // Standard deviation  // 2.33
 
 //---indicator parameters pyr 
-input int bands_periodPyr= 25;            // Bollinger Bands period PYR
+input int bands_periodPyr= 18;            // Bollinger Bands period PYR
 input int bands_periodThirdPyr= 60;            // Bollinger Bands period PYR
 
 input int InpFastEMA       = 12;              // InpFastEMA LaMotta
@@ -28,13 +28,12 @@ input double volP = 15; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
 input double risk = 0.15; // cantidad de la cuenta
 input int MaxNOrders = 3;
-
+input int DD = 7500;
 
 class LaMotta   
   {
 protected:
    double          sl, tp ;         
-   int             m_pMA;                           // MA period
    int             Bands_handle_thirdPYR, Bands_handle_PYR, Bands_handle, EMAFastMaHandle, EMASlowMaHandle , EMASlowestMaHandle;           
    double      	   FastEma[],SlowEma[] , SlowestEma[];			// EMA lines
    string          m_smb; ENUM_TIMEFRAMES m_tf ; 
@@ -42,25 +41,25 @@ protected:
    double      	  Base[], Upper[],  Lower[];     //  BASE_LINE, UPPER_BAND and LOWER_BAND  of iBands
    int            MaxNumberOrders  ; 
 public:
-	void        LaMotta();
-	void       ~LaMotta();
+	void             LaMotta();
+	void            ~LaMotta();
 	
-	 bool      Init(string smb,ENUM_TIMEFRAMES tf); // initialization
-	 bool      Main();                              // main function
+	 bool            Init(string smb,ENUM_TIMEFRAMES tf); // initialization
+	 bool           Main();                              // main function
 	 
-	void      OpenPosition(long dir);              // open position on signal
-	void      ClosePosition(long dir) ;
-	void      PyrPosition() ;
-	long      CheckSignal(long type);            // check signal
-	long      CheckFilter(long type);  
-	void      Deal(long type, int order,bool pyr); 
-	long      LastClosePrice(int dir);
-   long       CheckSignalClose(long dir, bool bEntry);
-   bool      getMaxNumerOrders(long dir);
-	long          CheckSignalThirdPyr(long dir, bool bEntry);
+	void            OpenPosition(long dir);              // open position on signal
+	void            ClosePosition(long dir) ;
+	void            PyrPosition() ;
+	long            CheckSignal(long type);            // check signal
+	long            CheckFilter(long type);  
+	void           Deal(long type, int order,bool pyr); 
+	long           LastClosePrice(int dir);
+   long           CheckSignalClose(long dir, bool bEntry);
+   bool           getMaxNumerOrders(long dir);
+	long           CheckSignalThirdPyr(long dir, bool bEntry);
+	
 	// to piramiding
 	 long      	   CheckSignalPyr(long type, bool bEntry);            // check signal
-
 	 long     	   CheckFilterPyr(long type);  
     long          CheckDistance(long type, bool bEntry);
     double        LastDealOpenPrice();
@@ -90,7 +89,6 @@ bool LaMotta::Init(string smb,ENUM_TIMEFRAMES tf)
 
 	tp=TakeProfit;   sl=-1; 
 	MaxNumberOrders = 0;
-    m_pMA = bands_period;
    	//--- creation of the indicator iBands
 	Bands_handle=iBands(_Symbol,period,bands_period,0,deviation,PRICE_CLOSE);
 	Bands_handle_PYR=iBands(_Symbol,period,bands_periodPyr,0,deviation,PRICE_CLOSE);
@@ -115,7 +113,7 @@ bool LaMotta::Init(string smb,ENUM_TIMEFRAMES tf)
 bool LaMotta::Main()
   {
  	   if(!rm.Main()) return(false); // call function of parent class
-	   if(Bars(m_smb,m_tf)<=m_pMA) return(false); // if there are insufficient number of bars
+	   if(Bars(m_smb,m_tf)<=bands_period) return(false); // if there are insufficient number of bars
 	   if (rm.m_account.FreeMargin()<2000) return false;
 
 	 

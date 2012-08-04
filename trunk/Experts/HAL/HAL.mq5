@@ -115,7 +115,7 @@ bool HAL::Main()
 	    if(!pyr.Main()) return(false); // call function of parent class
 	   if(Bars(m_smb,m_tf)<=m_pMA) return(false); // if there are insufficient number of bars
 
-	   if (rm.m_account.FreeMargin()<3000) return false;
+	   if (rm.m_account.FreeMargin()<1500) return false;
 	   
 	 if(!PositionSelect(m_smb)) 
 	 {
