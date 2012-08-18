@@ -24,7 +24,7 @@ input ENUM_TIMEFRAMES period = PERIOD_H1;
 // risk management
 input double volP = 12; // volatilidad que arriesgamos en la entrada
 input double vol = 6; 
-input double risk = 0.05; // cantidad de la cuenta
+input double risk = 0.15; // cantidad de la cuenta
 input int MaxNOrders = 3;
 input int DD = 10500;
 
@@ -97,7 +97,7 @@ bool LaMotta::Init(string smb,ENUM_TIMEFRAMES tf)
    	
 	EMAFastMaHandle=iMA(_Symbol,period,InpFastEMA,0,MODE_SMMA,PRICE_CLOSE);
 	EMASlowMaHandle=iMA(_Symbol,period,InpSlowEMA,0,MODE_SMMA,PRICE_CLOSE);
-	EMASlowestMaHandle=iMA(_Symbol,period,InpSlowestEMA,0,MODE_SMMA,PRICE_CLOSE);
+	EMASlowestMaHandle=iMA(_Symbol,period,InpSlowestEMA,0,MODE_SMA,PRICE_CLOSE);
    		  
 	//--- report if there was an error in object creation
 	   if(Bands_handle<0 || EMAFastMaHandle < 0 || EMASlowMaHandle < 0 || Bands_handle_PYR <0 || EMASlowestMaHandle < 0 )
@@ -213,12 +213,12 @@ long LaMotta::CheckSignalClose(long dir, bool bEntry)
       if(!GetBandsBuffers(Bands_handle,0,bands_period,Base,Upper,Lower,true)) return (-1);          
           if( rm.ea.BasePrice( dir) < Lower[0]   )
                {  
-					 printf(__FUNCTION__+ " Dispersion negativa tocada x S    ORDER_TYPE_BUY  Lower: " + NormalizeDouble(Lower[0],5)  + " Ask: " +NormalizeDouble(rm.ea.BasePrice(dir),5));
+					// printf(__FUNCTION__+ " Dispersion negativa tocada x S    ORDER_TYPE_BUY  Lower: " + NormalizeDouble(Lower[0],5)  + " Ask: " +NormalizeDouble(rm.ea.BasePrice(dir),5));
                      return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL);
                }
           else  if(  rm.ea.BasePrice( dir)  > Upper[0])
                    {  
-						printf(__FUNCTION__+ " Dispersion Positivatocada x S    ORDER_TYPE_SELL      Upper: " +  NormalizeDouble(Upper[0],5)+ " Bid: "  + NormalizeDouble(rm.ea.BasePrice(dir),5) );
+					//	printf(__FUNCTION__+ " Dispersion Positivatocada x S    ORDER_TYPE_SELL      Upper: " +  NormalizeDouble(Upper[0],5)+ " Bid: "  + NormalizeDouble(rm.ea.BasePrice(dir),5) );
                         return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for buy
                    }
    return(WRONG_VALUE);
@@ -422,15 +422,41 @@ double LaMotta::LastDealOpenPrice()
 
 
     
-LaMotta prisEURUSD; // class instance
+LaMotta prisEURUSD, prisGBPUSD; // class instance
 //------------------------------------------------------------------	OnInit
 int OnInit()
   {
-   prisEURUSD.Init(Symbol(),Period()); // initialize expert
-
+     if(iCustom("GBPUSD",PERIOD_M1,"iSpy",ChartID(),0)==INVALID_HANDLE) 
+      { Print("Error in setting of spy on GBPUSD"); return(true);}
+   if(iCustom("EURUSD",PERIOD_M1,"iSpy",ChartID(),1)==INVALID_HANDLE) 
+      { Print("Error in setting of spy on EURUSD"); return(true);}
+      
+   prisEURUSD.Init("EURUSD",period); // initialize expert
+   prisGBPUSD.Init("GBPUSD",period); // initialize expert
    return(0);
   }
-//------------------------------------------------------------------	OnDeinit
+
+//+------------------------------------------------------------------+
+//| The Standard event handler.                                      |
+//| See MQL5 Reference for the details.                              |
+//|                                                                  |
+//| In this case it is used for decoding of spy messages, sent by    |
+//| iSPY spy indicator                                               |
+//+------------------------------------------------------------------+
+void OnChartEvent(const int id,         // event id:
+                                        // if id-CHARTEVENT_CUSTOM=0 - "initialization" event
+                  const long&   lparam, // chart period
+                  const double& dparam, // price
+                  const string& sparam  // symbol
+                 )
+  {
+   if(id>=CHARTEVENT_CUSTOM)      
+     {
+    //  Print(TimeToString(TimeCurrent(),TIME_SECONDS)," -> id=",id-CHARTEVENT_CUSTOM,":  ",sparam," ",EnumToString((ENUM_TIMEFRAMES)lparam)," price=",dparam);
+     }
+  }
+
+//-----------------------------------------------------	OnDeinit
 void OnDeinit(const int reason) { }
 //------------------------------------------------------------------	OnTick
 void OnTick()
