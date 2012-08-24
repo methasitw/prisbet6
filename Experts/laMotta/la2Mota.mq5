@@ -9,7 +9,7 @@ input int    TakeProfit   = 1200; 		     // Take Profit distance solo se ejecuta
 
 
 input int bands_period     = 90;            // Bollinger Bands period
-input double deviation     = 2.33;          // Standard deviation  // 2.33
+input double deviation     =1.8;          // Standard deviation  // 2.0
 //---indicator parameters pyr 
 input int bands_periodPyr= 25;            // Bollinger Bands period PYR
 
@@ -18,15 +18,14 @@ input int InpSlowEMA       = 25 ;            // InpSlowEMA LaMotta
 input int  InpSlowestEMA   = 850;            // InpSlowestEMA LaMotta
    
    
-input ENUM_TIMEFRAMES period = PERIOD_H1;
+input ENUM_TIMEFRAMES period = PERIOD_M15;
 
 
 // risk management
-input double volP = 12; // volatilidad que arriesgamos en la entrada
-input double vol = 6; 
-input double risk = 0.15; // cantidad de la cuenta
-input int MaxNOrders = 3;
-input int DD = 10500;
+input double volP = 10; // volatilidad que arriesgamos en la entrada
+input double vol = 5; 
+input int MaxNOrders = 2;
+input int DD = 5000;
 
 
 class LaMotta   
@@ -52,10 +51,10 @@ public:
 	void      PyrPosition() ;
 	long      CheckSignal(long type);            // check signal
 	long      CheckFilter(long type);  
-	void      Deal(long type, int order,bool pyr); 
+	void      Deal(long type, bool pyr); 
 	long      LastClosePrice(int dir);
    long       CheckSignalClose(long dir, bool bEntry);
-   bool      getMaxNumerOrders(long dir);
+   bool      getMaxNumerOrders(long dir,bool pyr);
 	
 	// to piramiding
 	 long      	   CheckSignalPyr(long type, bool bEntry);            // check signal
@@ -91,13 +90,13 @@ bool LaMotta::Init(string smb,ENUM_TIMEFRAMES tf)
 	MaxNumberOrders = 0;
     m_pMA = bands_period;
    	//--- creation of the indicator iBands
-	Bands_handle=iBands(_Symbol,period,bands_period,0,deviation,PRICE_CLOSE);
-	Bands_handle_PYR=iBands(_Symbol,period,bands_periodPyr,0,deviation,PRICE_CLOSE);
+	Bands_handle=iBands(m_smb,period,bands_period,0,deviation,PRICE_CLOSE);
+	Bands_handle_PYR=iBands(m_smb,period,bands_periodPyr,0,deviation,PRICE_CLOSE);
 	
    	
-	EMAFastMaHandle=iMA(_Symbol,period,InpFastEMA,0,MODE_SMMA,PRICE_CLOSE);
-	EMASlowMaHandle=iMA(_Symbol,period,InpSlowEMA,0,MODE_SMMA,PRICE_CLOSE);
-	EMASlowestMaHandle=iMA(_Symbol,period,InpSlowestEMA,0,MODE_SMA,PRICE_CLOSE);
+	EMAFastMaHandle=iMA(m_smb,period,InpFastEMA,0,MODE_SMMA,PRICE_CLOSE);
+	EMASlowMaHandle=iMA(m_smb,period,InpSlowEMA,0,MODE_SMMA,PRICE_CLOSE);
+	EMASlowestMaHandle=iMA(m_smb,period,InpSlowestEMA,0,MODE_SMA,PRICE_CLOSE);
    		  
 	//--- report if there was an error in object creation
 	   if(Bands_handle<0 || EMAFastMaHandle < 0 || EMASlowMaHandle < 0 || Bands_handle_PYR <0 || EMASlowestMaHandle < 0 )
@@ -126,7 +125,7 @@ bool LaMotta::Main()
      else 
          {
 		  if(PositionGetInteger(POSITION_TYPE)!= CheckDistance(PositionGetInteger(POSITION_TYPE), true  )) return false;
-		  
+		
 			HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));   
 				if(  HistoryOrdersTotal()  < MaxNumberOrders  )
 				{
@@ -147,9 +146,8 @@ bool LaMotta::Main()
   {
            
              if(dir!=CheckSignal(dir)) return;// if there is no signal for current direction
-           //      if(dir!=CheckFilter(dir)) return;// if there is no signal for current direction     
-                printf(__FUNCTION__+ " ### EMA cruzada   ### "  );      
-                  Deal(dir, 0,false);
+                 printf(__FUNCTION__+ " ### EMA cruzada   ### "  );      
+                  Deal(dir, false);
                 
                 }
  
@@ -157,19 +155,14 @@ bool LaMotta::Main()
 // Open Position
 //------------------------------------------------------------------
   void LaMotta::PyrPosition()
-  { 
-                                                                   
+  {                                                                  
                         if(PositionGetInteger(POSITION_TYPE)!=CheckSignalPyr(PositionGetInteger(POSITION_TYPE), true)) return;
                                printf("                       * piramida *  " );
                                printf(__FUNCTION__+ " Dispersion BB 20 tocada . Deal numero: " + HistoryOrdersTotal() );
-                              
-                  	   Deal(PositionGetInteger(POSITION_TYPE), HistoryOrdersTotal(),true);                 	   
+                         Deal(PositionGetInteger(POSITION_TYPE), true);                 	   
                         return ;
-
   }
 
-  
-  
  //------------------------------------------------------------------	
 // Close Position if the price touch the bollinger bands an the volumen is more than PeakVolumen
 //------------------------------------------------------------------ 
@@ -219,76 +212,52 @@ long LaMotta::CheckSignalClose(long dir, bool bEntry)
           else  if(  rm.ea.BasePrice( dir)  > Upper[0])
                    {  
 					//	printf(__FUNCTION__+ " Dispersion Positivatocada x S    ORDER_TYPE_SELL      Upper: " +  NormalizeDouble(Upper[0],5)+ " Bid: "  + NormalizeDouble(rm.ea.BasePrice(dir),5) );
-                        return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for buy
+                        return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);
                    }
    return(WRONG_VALUE);
   }
   
-  
-//------------------------------------------------------------------	
-// Check Filter
-//------------------------------------------------------------------ 
-long LaMotta::CheckFilter(long dir)
-{   
-   if(!CopyBufferAsSeries(EMAFastMaHandle,0,0,InpFastEMA,true,FastEma)) return(false);
-   if(!CopyBufferAsSeries(EMASlowMaHandle,0,0,InpSlowEMA,true,SlowEma)) return(false);
 
-  if(dir == ORDER_TYPE_BUY && FastEma[0] > SlowEma[0]) // cambiado
-   
-   {         
-  printf(__FUNCTION__+ " Ema Cruzada: to buy "  + NormalizeDouble(rm.ea.BasePrice( dir),5)  );
-    return(ORDER_TYPE_BUY);    }
-
- else if(dir == ORDER_TYPE_SELL && FastEma[0] < SlowEma[0])
-    {         
-    printf(__FUNCTION__+ " Ema Cruzada: to sell "  + NormalizeDouble(rm.ea.BasePrice( dir),5) );
-     return(ORDER_TYPE_SELL);   }
-   return(WRONG_VALUE);
-}
-  
 
 //------------------------------------------------------------------	
 //------------------------------------------------------------------ 
-void LaMotta::Deal(long dir, int order,bool pyramiding)     // eliminado ratio, necesidad de dos deal diferentes para pir y para entrada inciial ¿?
+void LaMotta::Deal(long dir, bool pyramiding)     // eliminado ratio, necesidad de dos deal diferentes para pir y para entrada inciial ¿?
 {
- double Risk = rm.m_account.FreeMargin()*risk;
- 
-   if (pyramiding == true)           //piramida
+
+    if (pyramiding == true)           //piramida
    {
+   
     double pips= rm.getPips();
     pips = pips * volP ; // pongo un stop de 3/2 del ATR
-    double riesgo = Risk*2;
-    double lot =(riesgo + PositionGetDouble(POSITION_PROFIT)) /pips;
-             
-    printf(__FUNCTION__+ " riesgo:  " + riesgo  + " pips " +pips+ " POSITION_PROFIT " + PositionGetDouble(POSITION_PROFIT));
-              
-    lot = lot - PositionGetDouble(POSITION_VOLUME);
-             
-    if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )	      lot = 14.9 -  PositionGetDouble(POSITION_VOLUME);
-    if ( lot   > 5.0 )    											  lot = 5.0;
+
+    double lot = rm.getNVince()*2;  
+    if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )	      lot = 14.99 -  PositionGetDouble(POSITION_VOLUME);
           
-    double totalVolumen   =  (PositionGetDouble(POSITION_VOLUME) + lot ) ;           
-    printf(__FUNCTION__+ " Posicionamos con un stop de  " + pips/10  + " pips. Volumen de deal " +lot+ " totalVolumen : "+totalVolumen+" Risk : "  + pips* lot );
-          lot = rm.getNVince();     
+    double lot2 = lot/2;
+    lot = lot/2; 
+      
+    if ( lot   > 5.0 )    											  lot = 5.0;   
+         
     rm.DealOpen(dir,lot,pips/10,tp);
-     
+    Sleep(50);
+    rm.DealOpen(dir,lot2,pips/10,tp);
+
    }
    
    else
    {    
-          if ( !getMaxNumerOrders(dir)) return;
+          if ( !getMaxNumerOrders(dir,false)) return;
             double pips=   rm.getPips();
             pips = pips * vol; 
-            double lot = Risk /pips ;
+            double lot =  rm.getNVince();
             
               if ( lot   > 5.0 )
                       lot = lot = 5.0;
                       
             printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips/10  + " pips. Volumen de " +lot+ " Risk de: "  + pips* lot + " rm.getNVince() " +  rm.getNVince() );
-          lot=  rm.getNVince();
+
             rm.DealOpen(dir,lot, pips/10, tp);
-            
-            
+       
     }
    
  }   
@@ -326,7 +295,7 @@ long LaMotta::CheckSignalPyr(long dir, bool bEntry)
 // que ocurre si el programa se para durante el fin de semana ? la variable del contexto
 // MaxNumberOrders volvería a ser 1 o 2 ?
 //------------------------------------------------------------------	
- bool LaMotta::getMaxNumerOrders(long dir) 
+ bool LaMotta::getMaxNumerOrders(long dir, bool pyr) 
  {
  
  if(!CopyBufferAsSeries(EMASlowestMaHandle,0,0,InpSlowestEMA,true,SlowestEma)) return(false);
@@ -345,7 +314,7 @@ long LaMotta::CheckSignalPyr(long dir, bool bEntry)
      MaxNumberOrders  =  MaxNOrders;
 	 return(true);
    }
-
+ 
 
  else if(dir == ORDER_TYPE_SELL && rm.ea.BasePrice(dir) < SlowestEma[0])
     {         
@@ -359,6 +328,7 @@ long LaMotta::CheckSignalPyr(long dir, bool bEntry)
        MaxNumberOrders   = MaxNOrders;
 	   return(true);
    } 
+  
     return(true);
  }
  
@@ -418,49 +388,22 @@ double LaMotta::LastDealOpenPrice()
   
   
 
-
-
-
     
 LaMotta prisEURUSD, prisGBPUSD; // class instance
 //------------------------------------------------------------------	OnInit
 int OnInit()
   {
-     if(iCustom("GBPUSD",PERIOD_M1,"iSpy",ChartID(),0)==INVALID_HANDLE) 
-      { Print("Error in setting of spy on GBPUSD"); return(true);}
-   if(iCustom("EURUSD",PERIOD_M1,"iSpy",ChartID(),1)==INVALID_HANDLE) 
-      { Print("Error in setting of spy on EURUSD"); return(true);}
-      
-   prisEURUSD.Init("EURUSD",period); // initialize expert
+   
+  // prisEURUSD.Init("EURUSD",period); // initialize expert
    prisGBPUSD.Init("GBPUSD",period); // initialize expert
    return(0);
   }
 
-//+------------------------------------------------------------------+
-//| The Standard event handler.                                      |
-//| See MQL5 Reference for the details.                              |
-//|                                                                  |
-//| In this case it is used for decoding of spy messages, sent by    |
-//| iSPY spy indicator                                               |
-//+------------------------------------------------------------------+
-void OnChartEvent(const int id,         // event id:
-                                        // if id-CHARTEVENT_CUSTOM=0 - "initialization" event
-                  const long&   lparam, // chart period
-                  const double& dparam, // price
-                  const string& sparam  // symbol
-                 )
-  {
-   if(id>=CHARTEVENT_CUSTOM)      
-     {
-    //  Print(TimeToString(TimeCurrent(),TIME_SECONDS)," -> id=",id-CHARTEVENT_CUSTOM,":  ",sparam," ",EnumToString((ENUM_TIMEFRAMES)lparam)," price=",dparam);
-     }
-  }
 
-//-----------------------------------------------------	OnDeinit
-void OnDeinit(const int reason) { }
 //------------------------------------------------------------------	OnTick
 void OnTick()
   {
-   prisEURUSD.Main(); // process incoming tick
+ // prisEURUSD.Main(); // process incoming tick
+  prisGBPUSD.Main();
   }
 //+------------------------------------------------------------------+

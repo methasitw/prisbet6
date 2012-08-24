@@ -35,10 +35,10 @@ input double deviationPyr= 1.66;         // Standard deviation  PYR // 2.33
 input int riskPosition = 6;
 
 // Variables Risk Management
-input double Risk = 0.20;    // apostamos 90 euros x entrada
+input double Risk = 0.02;    // apostamos 90 euros x entrada
 input int    TakeProfit        = 1000; 		// Take Profit distance
-input double volP = 15; // volatilidad que arriesgamos en la entrada
-input double vol = 6; 
+input double volP = 13; // volatilidad que arriesgamos en la entrada
+input double vol = 4; 
 
 
 class HAL   

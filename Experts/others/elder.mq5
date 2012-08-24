@@ -16,13 +16,15 @@ input int ma_period=13;          // Period of MA
 input int fast_ema_period = 12;  // MACD fast period 
 input int slow_ema_period = 26;  // MACD slow period
 input int signal_period=9;       // MACD signal period
+input int atr_Period = 14;
+input int DD = 15000;
 
 
-int MA_Handle,MACD_Handle;
+int           MA_Handle,MACD_Handle, ATRHandle;
 
 //--- input parameters
-input double TakeProfit    =   0.007; // Take Profit
-input double StopLoss      =   0.0035;// Stop Loss
+input double TakeProfit    =  4; // Take Profit
+input double StopLoss      =  2;// Stop Loss
 
 CTrade trade;  
 //+------------------------------------------------------------------+
@@ -39,8 +41,9 @@ int OnInit()
 //---- getting handle of the iMACD indicator
    MACD_Handle=iMACD(NULL,0,fast_ema_period,slow_ema_period,signal_period,PRICE_CLOSE);
    if(MACD_Handle==INVALID_HANDLE) Print(" Failed to get handle of the iMACD indicator");
-
-
+ 
+    ATRHandle = iATR(NULL,NULL,atr_Period);
+ if(ATRHandle==INVALID_HANDLE) Print(" Failed to get handle of the iMACD indicator");
 //----   
    return(0);
   }
@@ -60,8 +63,7 @@ void OnTick()
 
 
 //---- declarations of local variables 
-
-   double MA[],MACDM[],MACDS[];
+   double MA[],MACDM[],MACDS[],  ATR[];
    double dma,dmacd0,dmacd1;
 
 
@@ -70,6 +72,7 @@ void OnTick()
    if(CopyBuffer(MA_Handle,0,0,3,MA)<=0) return;
    if(CopyBuffer(MACD_Handle,0,0,3,MACDM)<=0) return;
    if(CopyBuffer(MACD_Handle,1,0,3,MACDS)<=0) return;
+    if(CopyBuffer(ATRHandle,0,0,3,ATR)<=0) return;
 
 
 
@@ -96,26 +99,27 @@ void OnTick()
    if(buy)                                          // buy condition ok
          if(AccountInfoDouble(ACCOUNT_FREEMARGIN)>5000)      // if we have enough money
            {
-           printf("VERDE dma " + dma + " dmacd0 " + dmacd0 + " dmacd1 " + dmacd1  );
+           printf("VERDE dma " + dma + " dmacd0 " + dmacd0 + " dmacd1 " + dmacd1  + " sl " + StopLoss*ATR[0]+ " tp " + TakeProfit*ATR[0]);
             trade.PositionOpen(_Symbol,                                          // symbol
                                ORDER_TYPE_BUY,                                   // buy order
                                Money_M(),                                        // lots to trade
                                Ask,                                              // last ask price
-                               Ask - StopLoss,                                   // Stop Loss
-                               Ask + TakeProfit,                                 // Take Profit 
+                               Ask - StopLoss*ATR[0],                                   // Stop Loss
+                               Ask + TakeProfit*ATR[0],                                 // Take Profit 
                                " ");                                             // no comments
+         
            }
-       sell = false;    
+
      if (sell)
          if(AccountInfoDouble(ACCOUNT_FREEMARGIN)>5000)      // if we have enough money
            {
-           printf("ROJO  dma " + " dma  " +dmacd0  + "  dmacd0  " + dmacd1 + "  dmacd1 " );
+           printf("ROJO  dma " + dma + "  dmacd0  " + dmacd0 + "  dmacd1  " + dmacd1 + " sl " + StopLoss*ATR[0]+ " tp " + TakeProfit*ATR[0]);
             trade.PositionOpen(_Symbol,                                          // symbol
                                ORDER_TYPE_SELL,                                  // sell order
                                Money_M(),                                        // lots to trade
                                Bid,                                              // last bid price
-                               Bid + StopLoss,                                   // Stop Loss
-                               Bid - TakeProfit,                                 // Take Profit 
+                               Bid + StopLoss*ATR[0],                                 // Stop Loss
+                               Bid - StopLoss*ATR[0],                           // Take Profit 
                                " ");                                             // no comments
            }
          }
@@ -136,15 +140,20 @@ else
 
 
 double Money_M()
-  {
-   double Lots=AccountInfoDouble(ACCOUNT_FREEMARGIN)/100000*50;
-   Lots=MathMin(15,MathMax(0.1,Lots));
-   if(Lots<0.1)
-      Lots=NormalizeDouble(Lots,2);
-   else
-     {
-      if(Lots<1) Lots=NormalizeDouble(Lots,1);
-      else       Lots=NormalizeDouble(Lots,0);
-     }
-   return(Lots);
-  }
+{
+//N = [(1 + 8 * Equity / Delta) 0,5 +1] / 2
+//Delta neutro = DD / 2
+//N =  [ 1+ (1 + 8 * 50.000 / 7.000) ^ 0,5 ] / 2 = 4 contratos.
+
+long Equity =AccountInfoDouble(ACCOUNT_FREEMARGIN);
+long DeltaNeutro = DD/2;
+long value = 1 + 8*(Equity/DeltaNeutro );
+long valuesqrt = sqrt(value);
+long N = 1 + ( valuesqrt / 2);
+
+ Print(__FUNCTION__+" El Equity "+ Equity+"  DeltaNeutro: " +DeltaNeutro+ " N: " + N + " value" + value  + " valuesqrt "  + valuesqrt );
+ 
+ return N;
+}
+  
+  
