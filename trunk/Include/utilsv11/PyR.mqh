@@ -147,7 +147,7 @@ long PyR::CheckSignalPyr(long type, bool bEntry)
       if(!GetBandsBuffers(Bands_handle_PYR,0,90,Base,Upper,Lower,true)) return (-1);
            if( rm.ea.BasePrice( ORDER_TYPE_BUY) < Lower[0]   )
                {  
-               printf(__FUNCTION__+" precio tocando resistencia" ); 
+              // printf(__FUNCTION__+" precio tocando resistencia" ); 
                      return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL);
                }
 

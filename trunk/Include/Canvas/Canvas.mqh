@@ -8,6 +8,8 @@
 //+------------------------------------------------------------------+
 #define XRGB(r,g,b)    (0xFF000000|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
+#define TRGB(a,rgb)    ((uchar(a)<<24)|(rgb))
+#define GETRGB(clr)    ((clr)&&0xFFFFFF)
 #define GETRGBR(clr)   uchar((clr)>>16)
 #define GETRGBG(clr)   uchar((clr)>>8)
 #define GETRGBB(clr)   uchar(clr)
@@ -30,11 +32,11 @@ public:
                      CCanvas(void);
                     ~CCanvas(void);
    //--- create/destroy
-   bool              Create(const string name,const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_XRGB_NOALPHA);
+   virtual bool      Create(const string name,const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_ARGB_NORMALIZE);
    bool              CreateBitmap(const string name,const datetime time,const double price,
-                                  const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_XRGB_NOALPHA);
+                                  const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_ARGB_NORMALIZE);
    bool              CreateBitmapLabel(const string name,const int x,const int y,
-                                       const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_XRGB_NOALPHA);
+                                       const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_ARGB_NORMALIZE);
    void              Destroy(void);
    //--- properties
    string            ChartObjectName(void)          const { return(m_objname); }
@@ -58,6 +60,7 @@ public:
    void              Polyline(int &x[],int &y[],const uint clr);
    void              Polygon(int &x[],int &y[],const uint clr);
    void              Rectangle(int x1,int y1,int x2,int y2,const uint clr);
+   void              Arc(int x,int y,int r,const double fi1,const double fi2,const uint clr);
    void              Circle(int x,int y,int r,const uint clr);
    void              Triangle(int x1,int y1,int x2,int y2,int x3,int y3,const uint clr);
    //--- draw filled primitives
@@ -68,6 +71,8 @@ public:
    //--- draw primitives with antialiasing
    void              LineAA(int x1,int y1,int x2,int y2,const uint clr);
    void              TriangleAA(int x1,int y1,int x2,int y2,int x3,int y3,const uint clr);
+   //--- services
+   void              SetTransparentLevel(const uchar value);
 
 protected:
    uint              CalcColor(const uint clr_bBase,const uint clr,const int trans) const;
@@ -91,7 +96,7 @@ CCanvas::~CCanvas(void)
 //+------------------------------------------------------------------+
 //| Create dynamic resource                                          |
 //+------------------------------------------------------------------+
-bool CCanvas::Create(const string name,const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_XRGB_NOALPHA)
+bool CCanvas::Create(const string name,const int width,const int height,ENUM_COLOR_FORMAT clrfmt)
   {
    Destroy();
 //--- prepare data array
@@ -121,7 +126,7 @@ bool CCanvas::Create(const string name,const int width,const int height,ENUM_COL
 //| Create object on chart with attached dynamic resource            |
 //+------------------------------------------------------------------+
 bool CCanvas::CreateBitmap(const string name,const datetime time,const double price,
-                           const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_XRGB_NOALPHA)
+                           const int width,const int height,ENUM_COLOR_FORMAT clrfmt)
   {
 //--- create canvas
    if(Create(name,width,height,clrfmt))
@@ -148,7 +153,7 @@ bool CCanvas::CreateBitmap(const string name,const datetime time,const double pr
 //| Create object on chart with attached dynamic resource            |
 //+------------------------------------------------------------------+
 bool CCanvas::CreateBitmapLabel(const string name,const int x,const int y,
-                                const int width,const int height,ENUM_COLOR_FORMAT clrfmt=COLOR_FORMAT_XRGB_NOALPHA)
+                                const int width,const int height,ENUM_COLOR_FORMAT clrfmt)
   {
 //--- create canvas
    if(Create(name,width,height,clrfmt))
@@ -472,6 +477,12 @@ void CCanvas::Rectangle(int x1,int y1,int x2,int y2,const uint clr)
    LineVertical(x2,y1,y2,clr);
    LineHorizontal(x2,x1,y2,clr);
    LineVertical(x1,y2,y1,clr);
+  }
+//+------------------------------------------------------------------+
+//| Draw arc according to Bresenham's algorithm                      |
+//+------------------------------------------------------------------+
+void CCanvas::Arc(int x,int y,int r,const double fi1,const double fi2,const uint clr)
+  {
   }
 //+------------------------------------------------------------------+
 //| Draw circle according to Bresenham's algorithm                   |
@@ -810,5 +821,22 @@ void CCanvas::TriangleAA(int x1,int y1,int x2,int y2,int x3,int y3,const uint cl
    LineAA(x1,y1,x2,y2,clr);
    LineAA(x2,y2,x3,y3,clr);
    LineAA(x3,y3,x1,y1,clr);
+  }
+//+------------------------------------------------------------------+
+//| Set level of transparency                                        |
+//+------------------------------------------------------------------+
+void CCanvas::SetTransparentLevel(const uchar value)
+  {
+   uint clr;
+   int total=ArraySize(m_pixels);
+   for(int i=0;i<total;i++)
+     {
+//      m_pixels[i]=TRGB(value,GETRGB(m_pixels[i]));
+      clr=m_pixels[i]&0xFFFFFF;
+//      if(clr!=0)
+//      if(value==0)
+//         clr|=value<<24;
+      m_pixels[i]=((uint)value<<24)|(m_pixels[i]&0xFFFFFF);
+     }
   }
 //+------------------------------------------------------------------+
