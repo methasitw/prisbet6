@@ -1,9 +1,10 @@
 //+------------------------------------------------------------------+
-//|                                                        elder.mq5 |
-//|                        Copyright 2012, MetaQuotes Software Corp. |
-//|                                              http://www.mql5.com |
+//|LA distancia del ATR, condiciona:
+//						Los Stops Loose 
+//						La distancia para piramidar
+//						
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2012, MetaQuotes Software Corp."
+#property copyright "hippie Corp."
 #property link      "http://www.mql5.com"
 #property version   "1.00"
 
@@ -12,49 +13,45 @@
 //+-----------------------------------+
 //|  Indicator input parameters       |
 //+-----------------------------------+
-input int ma_periodFast=12;          // Period of MA
-input int ma_periodSlow = 25;  // MACD fast period 
-input int ma_periodSlowest = 850;  // MACD slow period
+input int ma_period_fast=12;          // Period of MA
+input int ma_period_slow = 25;  // MACD fast period 
+input int ma_period_slowest = 850;  // MACD slow period
 
-input int atr_Period = 14;
+input int atr_period = 14;
 input int DD = 5000;
 input int positions = 2 ;
 
-
-int           MA_HandleFast,MA_HandleSlow,MA_HandleSlowEst, ATR_Handle, BB_handle;
-
+input int BB_Period = 90;
+input int BB_Dispersion = 2.33;
 
 
 //--- input parameters
 input double Volatility       =  3; // SL
 input double VolatilityP      =  5;// SLP
 
+int  MA_handle_fast,MA_handle_slow,MA_handle_slowest, ATR_handle, BB_handle;
 CTrade trade;  
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
-
       
-//---- getting handle of the iMA indicator
-   MA_HandleFast=iMA(NULL,0,ma_periodFast,0,MODE_SMMA,PRICE_CLOSE);
-   if(MA_HandleFast==INVALID_HANDLE) Print(" Failed to get handle of the iMA indicator");
+		MA_handle_fast=iMA(NULL,0,ma_period_fast,0,MODE_SMMA,PRICE_CLOSE);
+		if(MA_handle_fast==INVALID_HANDLE) Print(" Failed to get handle of the iMA Fast indicator");
+		
+		MA_handle_slow=iMA(NULL,0,ma_period_slow,0,MODE_SMMA,PRICE_CLOSE);
+		if(MA_handle_slow==INVALID_HANDLE) Print(" Failed to get handle of the iMA Slow indicator");
+		
+		MA_handle_slowest=iMA(NULL,0,ma_period_slowest,0,MODE_SMA,PRICE_CLOSE);
+		if(MA_handle_slowest==INVALID_HANDLE) Print(" Failed to get handle of the iMA Slowest indicator");
+		
+		ATR_handle = iATR(NULL,0,atr_period);
+		if(ATR_handle==INVALID_HANDLE) Print(" Failed to get handle of the ATR indicator");
+		
+		BB_handle=iBands(NULL,0,BB_Period,0,BB_Dispersion,PRICE_CLOSE);
+		if(BB_handle==INVALID_HANDLE) Print(" Failed to get handle of the BB indicator");
 
-//---- getting handle of the iMACD indicator
-   MA_HandleSlow=iMA(NULL,0,ma_periodSlow,0,MODE_SMMA,PRICE_CLOSE);
-   if(MA_HandleSlow==INVALID_HANDLE) Print(" Failed to get handle of the iMACD indicator");
-   
-   //---- getting handle of the iMACD indicator
-   MA_HandleSlowEst=iMA(NULL,0,ma_periodSlowest,0,MODE_SMA,PRICE_CLOSE);
-   if(MA_HandleSlowEst==INVALID_HANDLE) Print(" Failed to get handle of the iMACD indicator");
- 
-    ATR_Handle = iATR(NULL,NULL,atr_Period);
- if(ATR_Handle==INVALID_HANDLE) Print(" Failed to get handle of the iMACD indicator");
- 
-    BB_handle=iBands(NULL,NULL,90,0,2.33,PRICE_CLOSE);
- if(BB_handle==INVALID_HANDLE) Print(" Failed to get handle of the iMACD indicator");
-//----   
    return(0);
   }
 
@@ -71,116 +68,121 @@ void OnTick()
          return;
         }
    
-   
-   //---- declarations of local variables 
-      double MAFast[],MASlow[],MASlowest[],  ATR[], Upper[], Lower[];
+      double MA_fast[],MA_slow[],MA_slowest[],  ATR[], Upper[], Lower[];
      
-   
-   
+
    //--- copy newly appeared data in the arrays
-      if(CopyBuffer(MA_HandleFast,0,0,3,MAFast)<=0) return;
-      if(CopyBuffer(MA_HandleSlow,0,0,3,MASlow)<=0) return;
-      if(CopyBuffer(MA_HandleSlowEst,0,0,3,MASlowest)<=0) return;
-      if(CopyBuffer(ATR_Handle,0,0,3,ATR)<=0) return;
+      if(CopyBuffer(MA_handle_fast,0,0,3,MA_fast)<=0) return;
+      if(CopyBuffer(MA_handle_slow,0,0,3,MA_slow)<=0) return;
+      if(CopyBuffer(MA_handle_slowest,0,0,3,MA_slowest)<=0) return;
+      if(CopyBuffer(ATR_handle,0,0,3,ATR)<=0) return;
       if(CopyBuffer(BB_handle,1,0,3,Upper)<=0) return;
       if(CopyBuffer(BB_handle,2,0,3,Lower)<=0) return;
-   
-   
-    bool buy = false, sell= false, close= false;
-   
-      double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5); // ask price
-      double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_BID),5); // bid price
+      
+		bool buy = false, sell= false, close= false, pyr = false;
+		double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5); 
+		double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_BID),5); 
    
     if(!PositionSelect(_Symbol)) 
-   	 {
-         buy   =(MAFast[0] <MASlow[0] && MAFast[1] > MASlow[1]);
-         sell  = (MAFast[0] > MASlow[0] && MAFast[1] < MASlow[1]) ;
-         close = false;
+      {
+         buy   =(MA_fast[0] <MA_slow[0] && MA_fast[1] > MA_slow[1]);
+         sell  = (MA_fast[0] > MA_slow[0] && MA_fast[1] < MA_slow[1]) ;
+         close = false;pyr = false;
        }
-       else{        
-               HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));   
-   				if(  HistoryOrdersTotal()  < positions  )
-   				{
-   					 printf("HistoryOrdersTotal  : " + HistoryOrdersTotal() );
-   				 }
-   				 else{   
-   				         double cop =  LastDealOpenPrice();
-   				          if(cop + ATR[0] < Ask && PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY || ( cop - ATR[0] >  Bid && PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL)) 
-   				                  {
-   				          		         
-                     			 if (PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY)
-                     			         {
-                     			               close =  ( Ask < Lower[0]);
-                     			                  if (close)
-                     			                        printf(" Ask  : " + Ask + " Lower[0] "  + Lower[0]);
-         								         }
-                               else if (PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL)
-         							          {
-         							            close =( Bid > Upper[0] );
-         							                  if (close)
-         							                        printf(" Bid  : " + Bid + " Upper[0] "  + Upper[0]);
-         								      }
-   								      }
-   			          }  
+       else{    
+
+			HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));  
+			double dir = PositionGetInteger(POSITION_TYPE);
+ 
+			double cop =  LastDealOpenPrice();
+           // Si ha recorrido un ATR respecto al anterior deal y el numero de posiciones es menor q positions
+		   if( HistoryOrdersTotal() < positions  && (cop + ATR[0] < Ask && dir == ORDER_TYPE_BUY || ( cop - ATR[0] >  Bid && dir == ORDER_TYPE_SELL)))
+           {
+               if (dir == ORDER_TYPE_BUY)
+                {
+                 pyr=( Bid > Lower[0]);
+                  if (pyr) 
+                        printf(" pyr position  by signal : Bid  : " + Bid + " Lower[0] "  + Lower[0]);
+                 }
+          
+          else if (dir == ORDER_TYPE_SELL)
+                  {
+                   pyr =( Ask < Upper[0]);
+                     if (pyr) 
+                        printf(" pyr position  by signal : Ask  : " + Ask + " Upper[0] "  + Upper[0]);
+                   }
+            }
+            else{ //cerramos  
+				if (dir == ORDER_TYPE_BUY)
+						{
+							close =  ( Ask < Lower[0]);
+								if (close)
+									printf(" position close by signal : Ask  : " + Ask + " Lower[0] "  + Lower[0]);
+						}
+					else if (dir == ORDER_TYPE_SELL)
+					{
+						close =( Bid > Upper[0] );
+							if (close)
+									printf(" position close by signal :Bid  : " + Bid + " Upper[0] "  + Upper[0]);
+					}
+				}  
        }
-       
       
       if (!PositionSelect(_Symbol)) 
       {
-      if(buy)                                          // buy condition ok
-            if(AccountInfoDouble(ACCOUNT_FREEMARGIN)>3000)      // if we have enough money
+      if(buy) 
+            if(AccountInfoDouble(ACCOUNT_FREEMARGIN)>3000)      	// cuanto es lo minimo para apostar ??
               {
               printf("VERDE pips : " + ATR[0]*Volatility );
-               trade.PositionOpen(_Symbol,                                          // symbol
-                                  ORDER_TYPE_BUY,                                   // buy order
-                                  Money_M(),                                        // lots to trade
-                                  Ask,                                              // last ask price
-                                  Ask - ATR[0]*Volatility,                                   // Stop Loss
-                                  Ask + ATR[0]*2*Volatility,                                 // Take Profit 
-                                  " ");                                             // no comments
-            
+               trade.PositionOpen(_Symbol,                                          
+                                  ORDER_TYPE_BUY,                                   
+                                  Money_M(),                                        
+                                  Ask,                                              
+                                  Ask - ATR[0]*Volatility,                          
+                                  Ask + ATR[0]*5*Volatility,                        
+                                  " entramos pa dentro ");                                             
               }
    
         if (sell)
             if(AccountInfoDouble(ACCOUNT_FREEMARGIN)>3000)      // if we have enough money
               {
                printf("ROJO pips : " + ATR[0]*Volatility );
-               trade.PositionOpen(_Symbol,                                          // symbol
-                                  ORDER_TYPE_SELL,                                  // sell order
-                                  Money_M(),                                        // lots to trade
-                                  Bid,                                              // last bid price
-                                  Bid + ATR[0]*Volatility,                      // Stop Loss
-                                  Bid - ATR[0]*2*Volatility,                       // Take Profit 
-                                  " ");                                             // no comments
+               trade.PositionOpen(_Symbol,                  
+                                  ORDER_TYPE_SELL,          
+                                  Money_M(),                
+                                  Bid,                      
+                                  Bid + ATR[0]*Volatility, 
+                                  Bid - ATR[0]*5*Volatility,
+                                  " Salimos pa fuera");     
               }
             }
-              
          else
          {
-            if (close)         // xq mierda aparece en true ¿?¿?¿?¿?¿?¿?
+            if (close)
                      {
-                        printf("Cerrado por señal de close  : " + close);
                         trade.PositionClose(_Symbol,1);
                      }
          }
+		 buy = false; sell = false; close = false;
    }   
-        
+
+
+
 
 
 double Money_M()
 {
-
-long Equity =AccountInfoDouble(ACCOUNT_FREEMARGIN);
-long DeltaNeutro = DD/2;
-long value = 1 + 8*(Equity/DeltaNeutro );
-long valuesqrt = sqrt(value);
-long N = 1 + ( valuesqrt / 2);
+	long Equity =AccountInfoDouble(ACCOUNT_FREEMARGIN);
+	long DeltaNeutro = DD/2;
+	long value = 1 + 8*(Equity/DeltaNeutro );
+	long valuesqrt = sqrt(value);
+	long N = 1 + ( valuesqrt / 2);
 
  return N;
 }
   
 
-//------------------------------------------------------------------	
+//------------------------------------------------------------------  
 // Last deal open price to calculate the distance necessary to process a new deal
 //------------------------------------------------------------------ 
 double LastDealOpenPrice()
@@ -194,7 +196,6 @@ double LastDealOpenPrice()
   
    if(pos_total>0)
      {
-
       if(PositionSelect(Symbol())) // continue if open position is for chart symbol and order type
         {
          pos_id=(ENUM_POSITION_PROPERTY_INTEGER)PositionGetInteger(POSITION_IDENTIFIER);
@@ -207,7 +208,6 @@ double LastDealOpenPrice()
 
          return(price);
         }
-
      }
    return(0);
   }

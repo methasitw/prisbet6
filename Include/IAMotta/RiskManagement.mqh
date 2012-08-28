@@ -11,10 +11,7 @@
 
 #include <Trade\DealInfo.mqh>
 #include <Trade\AccountInfo.mqh>
-
-
 #include <Trade\ExpertTradeForATC2011.mqh>
-
 #include <IAMotta\ServiceFunctions.mqh>
 
 input int ATRPeriod =14;
@@ -90,7 +87,7 @@ void RiskManagement::RiskManagement()
    
    if(m_symbol.Digits()==5 || m_symbol.Digits()==3) m_pnt*=10; // 
    
-   ExtATRHandle = iATR(NULL,TFATR,ATRPeriod);
+   ExtATRHandle = iATR(m_smb,TFATR,ATRPeriod);
    
       if(ExtATRHandle<0  )
      {
@@ -144,43 +141,7 @@ void RiskManagement::RiskManagement()
   
 
 //------------------------------------------------------------------ 
-//------------------------------------------------------------------   
-long RiskManagement::marginPerformance(int dir, double margin, bool bEntry)
-  {
-   double High[],Low[],price;
-   int window = 2;
-          ArraySetAsSeries(High,true);
-          ArraySetAsSeries(Low,true);
-         
-      int high =  CopyHigh(NULL,PERIOD_MN1,0,window,High);
-      int low =  CopyLow(NULL,PERIOD_MN1,0,window,Low);
 
-          double down = Low[ArrayMinimum(Low, 0, window)]   ;
-          double up =   High[ArrayMaximum(High, 0, window)] ;
-
-   
-               double  down1 = down + down*margin;
-               double up1 =      up - up*margin;
-
-   if ( ea.BasePrice(ORDER_TYPE_BUY) <= down1  && dir ==ORDER_TYPE_BUY )
-    {
-     Print(" ");
-    price =  NormalizeDouble(ea.BasePrice(dir),5);
-      Print(__FUNCTION__ +" El precio "+ price +" se situa fuera del margen [ " +down+ " : " +up+ " ] [ " +down1+ " : " +up1+ " ] ORDER_TYPE_BUY " );
-      return(bEntry ? ORDER_TYPE_BUY:ORDER_TYPE_SELL);// condition for buy
-    }
-    
-    else if (ea.BasePrice(ORDER_TYPE_SELL)>= up1 &&  dir ==ORDER_TYPE_SELL)
-    {
-     Print(" ");
-      price =  NormalizeDouble(ea.BasePrice(dir),5);
-
-      Print(__FUNCTION__+" El precio "+ price+" se situa fuera del margen [ " +down+ " : " +up+ " ] [ " +down1+ " : " +up1+ " ] ORDER_TYPE_SELL " );
-      return(bEntry ? ORDER_TYPE_SELL:ORDER_TYPE_BUY);// condition for buy
-    }
-    
-    return(WRONG_VALUE);
-  }
 
   /*
   Reducción Absoluta de la Equidad:			13 537,00		
