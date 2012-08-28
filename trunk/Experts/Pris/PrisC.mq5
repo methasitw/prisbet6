@@ -29,6 +29,8 @@ input int BB_Dispersion = 2.33;
 input double Volatility       =  3; // SL
 input double VolatilityP      =  5;// SLP
 
+
+int            MaxNumberOrders  ; 
 int  MA_handle_fast,MA_handle_slow,MA_handle_slowest, ATR_handle, BB_handle;
 CTrade trade;  
 //+------------------------------------------------------------------+
@@ -36,6 +38,7 @@ CTrade trade;
 //+------------------------------------------------------------------+
 int OnInit()
   {
+      MaxNumberOrders=0;
       
 		MA_handle_fast=iMA(NULL,0,ma_period_fast,0,MODE_SMMA,PRICE_CLOSE);
 		if(MA_handle_fast==INVALID_HANDLE) Print(" Failed to get handle of the iMA Fast indicator");
@@ -83,73 +86,88 @@ void OnTick()
 		double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5); 
 		double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_BID),5); 
    
+   
+	   HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));  
+		double dir = PositionGetInteger(POSITION_TYPE);
+			
     if(!PositionSelect(_Symbol)) 
       {
          buy   =(MA_fast[0] <MA_slow[0] && MA_fast[1] > MA_slow[1]);
          sell  = (MA_fast[0] > MA_slow[0] && MA_fast[1] < MA_slow[1]) ;
          close = false;pyr = false;
        }
-       else{    
+       
+       /*
+       Analisis de señales de close, buy, sell y pyr
+       */
+     else
+       {    
 
-			HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));  
-			double dir = PositionGetInteger(POSITION_TYPE);
- 
 			double cop =  LastDealOpenPrice();
            // Si ha recorrido un ATR respecto al anterior deal y el numero de posiciones es menor q positions
-		   if( HistoryOrdersTotal() < positions  && (cop + ATR[0] < Ask && dir == ORDER_TYPE_BUY || ( cop - ATR[0] >  Bid && dir == ORDER_TYPE_SELL)))
+		   if( HistoryOrdersTotal() < MaxNumberOrders  && (cop + ATR[0] < Ask && dir == ORDER_TYPE_BUY || ( cop - ATR[0] >  Bid && dir == ORDER_TYPE_SELL)))
            {
-               if (dir == ORDER_TYPE_BUY)
-                {
-                 pyr=( Bid > Lower[0]);
-                  if (pyr) 
-                        printf(" pyr position  by signal : Bid  : " + Bid + " Lower[0] "  + Lower[0]);
-                 }
-          
-          else if (dir == ORDER_TYPE_SELL)
-                  {
-                   pyr =( Ask < Upper[0]);
-                     if (pyr) 
-                        printf(" pyr position  by signal : Ask  : " + Ask + " Upper[0] "  + Upper[0]);
-                   }
+                  if (dir == ORDER_TYPE_BUY)
+                   {
+                    pyr=( Bid > Lower[0]);
+                     if (pyr) printf(" pyr position  by signal : Bid  : " + Bid + " Lower[0] "  + Lower[0]);
+                    }
+                   else if (dir == ORDER_TYPE_SELL)
+                     {
+                      pyr =( Ask < Upper[0]);
+                        if (pyr)  printf(" pyr position  by signal : Ask  : " + Ask + " Upper[0] "  + Upper[0]);
+                      }
             }
             else{ //cerramos  
 				if (dir == ORDER_TYPE_BUY)
 						{
 							close =  ( Ask < Lower[0]);
-								if (close)
-									printf(" position close by signal : Ask  : " + Ask + " Lower[0] "  + Lower[0]);
+								if (close)printf(" position close by signal : Ask  : " + Ask + " Lower[0] "  + Lower[0]);
 						}
 					else if (dir == ORDER_TYPE_SELL)
 					{
 						close =( Bid > Upper[0] );
-							if (close)
-									printf(" position close by signal :Bid  : " + Bid + " Upper[0] "  + Upper[0]);
+							if (close)	printf(" position close by signal :Bid  : " + Bid + " Upper[0] "  + Upper[0]);
 					}
 				}  
        }
       
-      if (!PositionSelect(_Symbol)) 
+      /*
+      PRocesamos el deal
+      */
+      if (!PositionSelect(_Symbol) && (buy || sell)) 
       {
+      // Determina el numero de piramidaciones dependiendo de la situacion del cruce de medias cortas respecto la larga
+       if((dir == ORDER_TYPE_BUY && Bid  > MA_slowest[0])||( dir == ORDER_TYPE_SELL && Ask  < MA_slowest[0]  ) )
+               {         
+                 printf(__FUNCTION__+ " ORDER_TYPE_buy  MaxNumberOrders = 1 "   );
+                 MaxNumberOrders  = 1;
+              }
+         else if ((dir == ORDER_TYPE_BUY && Ask  < MA_slowest[0]) ||( dir == ORDER_TYPE_SELL && Bid > MA_slowest[0])) 
+               {         
+                 printf(__FUNCTION__+ "  ORDER_TYPE_BUY MaxNumberOrders =  " + positions   );
+                 MaxNumberOrders  =  positions;
+               }   
       if(buy) 
             if(AccountInfoDouble(ACCOUNT_FREEMARGIN)>3000)      	// cuanto es lo minimo para apostar ??
               {
-              printf("VERDE pips : " + ATR[0]*Volatility );
+              printf("BUY ### pips : " + ATR[0]*Volatility );
                trade.PositionOpen(_Symbol,                                          
                                   ORDER_TYPE_BUY,                                   
-                                  Money_M(),                                        
+                                  Money_M(false),                                        
                                   Ask,                                              
                                   Ask - ATR[0]*Volatility,                          
                                   Ask + ATR[0]*5*Volatility,                        
                                   " entramos pa dentro ");                                             
               }
    
-        if (sell)
+      if (sell)
             if(AccountInfoDouble(ACCOUNT_FREEMARGIN)>3000)      // if we have enough money
               {
-               printf("ROJO pips : " + ATR[0]*Volatility );
+               printf("SELL ###  pips : " + ATR[0]*Volatility );
                trade.PositionOpen(_Symbol,                  
                                   ORDER_TYPE_SELL,          
-                                  Money_M(),                
+                                  Money_M(false),                
                                   Bid,                      
                                   Bid + ATR[0]*Volatility, 
                                   Bid - ATR[0]*5*Volatility,
@@ -160,7 +178,35 @@ void OnTick()
          {
             if (close)
                      {
-                        trade.PositionClose(_Symbol,1);
+                           printf( "MaxNumberOrders " +MaxNumberOrders+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
+                           printf( "HistoryOrdersTotal " +HistoryOrdersTotal()+ "POSITION CERRADA: ACCOUNT_BALANCE: "  + AccountInfoDouble(ACCOUNT_BALANCE) +" ACCOUNT_EQUITY: "  + AccountInfoDouble(ACCOUNT_EQUITY));
+                           trade.PositionClose(_Symbol,1);
+                     }
+                     
+            if (pyr)
+                     {
+                        if ( PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL)
+                        {
+                                 printf("PYR ### pips : " + ATR[0]*VolatilityP );
+                                 trade.PositionOpen(_Symbol,                  
+                                 ORDER_TYPE_SELL,          
+                                 Money_M(true),                
+                                 Bid,                      
+                                 Bid + ATR[0]*VolatilityP, 
+                                 Bid - ATR[0]*3*VolatilityP,
+                                 " Salimos pa fuera");     
+                           }
+                           else if ( PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY)
+                           {
+                                  printf("BUY ### pips : " + ATR[0]*Volatility );
+                                  trade.PositionOpen(_Symbol,                                          
+                                  ORDER_TYPE_BUY,                                   
+                                  Money_M(false),                                        
+                                  Ask,                                              
+                                  Ask - ATR[0]*VolatilityP,                          
+                                  Ask + ATR[0]*5*VolatilityP,                        
+                                  " entramos pa dentro ");         
+                           }
                      }
          }
 		 buy = false; sell = false; close = false;
@@ -170,7 +216,7 @@ void OnTick()
 
 
 
-double Money_M()
+double Money_M(bool pyr)
 {
 	long Equity =AccountInfoDouble(ACCOUNT_FREEMARGIN);
 	long DeltaNeutro = DD/2;
