@@ -3,10 +3,10 @@
 //Consideraciones generales
 //Sistema tipo swing ==> escasas oportunidades de podium pero altas top ten
 
+// probar errores 
+// Algo guay para este sistema es que si el precio ha recorrido mucha distancia
+// y no ha metido su segunda orden se mete y punto !!!
 
-// Tareas :
-//P1
-// resolver problemas de errores 
 //+------------------------------------------------------------------+
 #property copyright "hippie Corp."
 
@@ -27,7 +27,7 @@ input double BB_Dispersion = 1.8;
 
 //--- input parameters
 input double Volatility       =  3; // SL
-input double VolatilityP      =  5;// SLP
+input double VolatilityP      =  6;// SLP
 input int  dist = 6 ;
 
 
@@ -131,7 +131,7 @@ void OnTick()
 			   if( HistoryOrdersTotal() < MaxNumberOrders ) 
 		
 				   {
-						 printf(" Precio ya esta a una distancia adecuada  Bid: " + Bid + " cop: "  + cop );
+						// printf(" Precio ya esta a una distancia adecuada  Bid: " + Bid + " cop: "  + cop );
 						  if (dir == ORDER_TYPE_BUY)    
 						   {
 								pyr=(Bid < Lower[0]);
@@ -251,9 +251,14 @@ double Money_M()
   long value = 1 + 8*(Equity/DeltaNeutro );
   long valuesqrt = sqrt(value);
   long N = 1 + ( valuesqrt / 2);
-  
+  printf(__FUNCTION__  + "N " + N + " valuesqrt " +  valuesqrt );
 if (N > 5)  N = 4.99;
-  if ( (N +PositionGetDouble(POSITION_VOLUME))  > 15.0 )        N = 14.99 -  PositionGetDouble(POSITION_VOLUME);
+ 
+ if (PositionSelect(_Symbol))
+    if ( (N +PositionGetDouble(POSITION_VOLUME))  > 15.0 )
+            N = 14.99 -  PositionGetDouble(POSITION_VOLUME);
+            
+  printf(__FUNCTION__  + "N " + N + " valuesqrt " +  valuesqrt + " PositionGetDouble(POSITION_VOLUME) "  +PositionGetDouble(POSITION_VOLUME) );
   return N;
 }
   
