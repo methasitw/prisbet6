@@ -264,7 +264,7 @@ bool script::Deal(long dir, bool pyramiding)
       
     if ( lot   > 5.0 )                            lot = 5.0;   
          
-    DealOpen(dir,lot,pips,pips*4);
+    DealOpen(dir,lot,pips*2,pips*4);
     return true;
    }
    
@@ -279,7 +279,7 @@ bool script::Deal(long dir, bool pyramiding)
                       lot = lot = 5.0;
                       
             printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips  + " pips. y lot de "  + lot  );
-            DealOpen(dir,lot, pips, pips*6);
+            DealOpen(dir,lot, pips*2, pips*6);
        return true;
     }
    return false;
@@ -320,13 +320,13 @@ long script::CheckSignalToPyr(long dir)
 
         if(!CopyBufferAsSeries(RSIHandle,0,0,2,true,RSI))return(WRONG_VALUE);
 
-           if(dir == ORDER_TYPE_SELL &&   RSI[0] > 60  )
+           if(dir == ORDER_TYPE_SELL &&   RSI[0] > 51  )
                {  
                      printf(__FUNCTION__+ "  RSI[0]: " +  RSI[0]  );
                      return(ORDER_TYPE_SELL);
                }
 
-          else  if( dir == ORDER_TYPE_BUY &&  RSI[0] < 40 )
+          else  if( dir == ORDER_TYPE_BUY &&  RSI[0] < 49 )
                    {  
                         printf(__FUNCTION__+ "  RSI[0]: " +  RSI[0]  );
                         return(ORDER_TYPE_BUY);
