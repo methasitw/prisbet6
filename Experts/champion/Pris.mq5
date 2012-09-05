@@ -251,7 +251,7 @@ double Money_M()
   long value = 1 + 8*(Equity/DeltaNeutro );
   long valuesqrt = sqrt(value);
   long N = 1 + ( valuesqrt / 2);
-  printf(__FUNCTION__  + "N " + N + " valuesqrt " +  valuesqrt );
+
 if (N > 5)  N = 4.99;
  
  if (PositionSelect(_Symbol))
