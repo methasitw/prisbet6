@@ -14,13 +14,13 @@ input double deviation     =2;               // Standard deviation  // 2.0
 
 //---indicator parameters pyr 
    
-input ENUM_TIMEFRAMES TFATR = PERIOD_D1;
+input ENUM_TIMEFRAMES TFATR = PERIOD_H1;
 input ENUM_TIMEFRAMES period = PERIOD_H1;
 input int ATRPeriod  = 14 ;
 
 // risk management
-input double volP = 10; // volatilidad que arriesgamos en la entrada
-input double vol = 5; 
+input double volP = 6; // volatilidad que arriesgamos en la entrada
+input double vol = 3; 
 input int MaxNOrders = 3;
 
 
@@ -271,7 +271,6 @@ bool script::Deal(long dir, bool pyramiding)
    else
    {    
           if ( !getMaxNumerOrders(dir,false)) return false;
-
             pips = pips * vol; 
             double lot =  getNVince();
             
