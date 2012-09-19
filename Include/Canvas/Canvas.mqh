@@ -9,7 +9,7 @@
 #define XRGB(r,g,b)    (0xFF000000|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define TRGB(a,rgb)    ((uchar(a)<<24)|(rgb))
-#define GETRGB(clr)    ((clr)&&0xFFFFFF)
+#define GETRGB(clr)    ((clr)&0xFFFFFF)
 #define GETRGBR(clr)   uchar((clr)>>16)
 #define GETRGBG(clr)   uchar((clr)>>8)
 #define GETRGBB(clr)   uchar(clr)

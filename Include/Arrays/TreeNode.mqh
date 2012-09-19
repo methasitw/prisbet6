@@ -25,11 +25,11 @@ public:
                     ~CTreeNode(void);
    //--- methods of access to protected data
    CTreeNode*        Parent(void)           const { return(m_p_node);    }
-   void              Parent(const CTreeNode *node){ m_p_node=node;       }
+   void              Parent(CTreeNode *node)      { m_p_node=node;       }
    CTreeNode*        Left(void)             const { return(m_l_node);    }
-   void              Left(const CTreeNode *node)  { m_l_node=node;       }
+   void              Left(CTreeNode *node)        { m_l_node=node;       }
    CTreeNode*        Right(void)            const { return(m_r_node);    }
-   void              Right(const CTreeNode *node) { m_r_node=node;       }
+   void              Right(CTreeNode *node)       { m_r_node=node;       }
    int               Balance(void)          const { return(m_balance);   }
    int               BalanceL(void)         const { return(m_l_balance); }
    int               BalanceR(void)         const { return(m_r_balance); }

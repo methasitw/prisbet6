@@ -18,10 +18,10 @@ public:
                      CObject(void);
                     ~CObject(void);
    //--- methods to access protected data
-   CObject          *Prev(void)                             const  { return(m_prev); }
-   void              Prev(const CObject *node)                     { m_prev=node;    }
+   CObject          *Prev(void)                              const { return(m_prev); }
+   void              Prev(CObject *node)                           { m_prev=node;    }
    CObject          *Next(void)                              const { return(m_next); }
-   void              Next(const CObject *node)                     { m_next=node;    }
+   void              Next(CObject *node)                           { m_next=node;    }
    //--- methods for working with files
    virtual bool      Save(const int file_handle)                   { return(true);   }
    virtual bool      Load(const int file_handle)                   { return(true);   }

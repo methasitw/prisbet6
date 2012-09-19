@@ -23,11 +23,15 @@ public:
                     ~CEdit(void);
    //--- create
    virtual bool      Create(const long chart,const string name,const int subwin,const int x1,const int y1,const int x2,const int y2);
+   //--- chart event handler
+   virtual bool      OnEvent(const int id,const long& lparam,const double& dparam,const string& sparam);
    //--- parameters of the chart object
    bool              ReadOnly(void)         const { return(m_read_only);                          }
    bool              ReadOnly(const bool flag);
    ENUM_ALIGN_MODE   TextAlign(void)        const { return(m_align_mode);                         }
    bool              TextAlign(const ENUM_ALIGN_MODE align);
+   //--- data access
+   string            Text(void)             const { return(m_edit.Description());                 }
 
 protected:
    //--- handlers of object events
@@ -49,6 +53,16 @@ protected:
    virtual bool      OnChange(void);
    virtual bool      OnClick(void);
   };
+//+------------------------------------------------------------------+
+//| Common handler of chart events                                   |
+//+------------------------------------------------------------------+
+bool CEdit::OnEvent(const int id,const long& lparam,const double& dparam,const string& sparam)
+  {
+   if(m_name==sparam && id==CHARTEVENT_OBJECT_ENDEDIT)
+      return(OnObjectEndEdit());
+//--- event was not handled
+   return(CWndObj::OnEvent(id,lparam,dparam,sparam));
+  }
 //+------------------------------------------------------------------+
 //| Constructor                                                      |
 //+------------------------------------------------------------------+

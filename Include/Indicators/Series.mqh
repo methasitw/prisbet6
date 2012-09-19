@@ -214,7 +214,7 @@ bool CSeries::CheckServerHistory(const int size)
    while(!IsStopped())
      {
       //--- wait for timeseries build
-      while(!SeriesInfoInteger(m_symbol,m_period,SERIES_SYNCRONIZED) && !IsStopped())
+      while(!SeriesInfoInteger(m_symbol,m_period,SERIES_SYNCHRONIZED) && !IsStopped())
          Sleep(5);
       //--- ask for built bars
       int bars=Bars(m_symbol,m_period);
