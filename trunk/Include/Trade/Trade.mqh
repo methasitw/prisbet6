@@ -99,7 +99,7 @@ public:
                                const ENUM_ORDER_TYPE_TIME type_time=ORDER_TIME_GTC,const datetime expiration=0,
                                const string comment="");
    bool              OrderModify(const ulong ticket,const double price,const double sl,const double tp,
-                                 const ENUM_ORDER_TYPE_TIME type_time,const datetime expiration);
+                                 const ENUM_ORDER_TYPE_TIME type_time,const datetime expiration,const double stoplimit=0.0);
    bool              OrderDelete(const ulong ticket);
    //--- additions methods
    bool              Buy(const double volume,const string symbol=NULL,double price=0.0,const double sl=0.0,const double tp=0.0,const string comment="");
@@ -433,7 +433,7 @@ bool CTrade::OrderOpen(const string symbol,const ENUM_ORDER_TYPE order_type,cons
 //| Modify specified pending order.                                  |
 //+------------------------------------------------------------------+
 bool CTrade::OrderModify(const ulong ticket,const double price,const double sl,const double tp,
-                         const ENUM_ORDER_TYPE_TIME type_time,const datetime expiration)
+                         const ENUM_ORDER_TYPE_TIME type_time,const datetime expiration,const double stoplimit)
   {
 //--- check stopped
    if(IsStopped(__FUNCTION__)) return(false);
@@ -443,6 +443,7 @@ bool CTrade::OrderModify(const ulong ticket,const double price,const double sl,c
    m_request.action      =TRADE_ACTION_MODIFY;
    m_request.order       =ticket;
    m_request.price       =price;
+   m_request.stoplimit   =stoplimit;
    m_request.sl          =sl;
    m_request.tp          =tp;
    m_request.type_time   =type_time;
@@ -855,7 +856,7 @@ string CTrade::FormatRequest(string& str,const MqlTradeRequest& request) const
    return(str);
   }
 //+------------------------------------------------------------------+
-//| Converts teh result of a request to text.                        |
+//| Converts the result of a request to text.                        |
 //+------------------------------------------------------------------+
 string CTrade::FormatRequestResult(string& str,const MqlTradeRequest& request,const MqlTradeResult& result) const
   {

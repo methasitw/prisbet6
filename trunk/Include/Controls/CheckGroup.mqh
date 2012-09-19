@@ -31,6 +31,7 @@ public:
                     ~CCheckGroup(void);
    //--- create
    virtual bool      Create(const long chart,const string name,const int subwin,const int x1,const int y1,const int x2,const int y2);
+   virtual void      Destroy(const int reason=0);
    //--- chart event handler
    virtual bool      OnEvent(const int id,const long& lparam,const double& dparam,const string& sparam);
    //--- fill
@@ -38,6 +39,8 @@ public:
    //--- data
    long              Value(void)            const;
    bool              Value(long value);
+   //--- state
+   virtual bool      Show(void);
    //--- methods for working with files
    virtual bool      Save(const int file_handle);
    virtual bool      Load(const int file_handle);
@@ -99,6 +102,17 @@ bool CCheckGroup::Create(const long chart,const string name,const int subwin,con
    return(true);
   }
 //+------------------------------------------------------------------+
+//| Delete group of controls                                         |
+//+------------------------------------------------------------------+
+void CCheckGroup::Destroy(const int reason)
+  {
+//--- call of the method of the parent class
+   CWndClient::Destroy(reason);
+//--- clear items
+   m_strings.Clear();
+   m_values.Clear();
+  }
+//+------------------------------------------------------------------+
 //| Create "row"                                                     |
 //+------------------------------------------------------------------+
 bool CCheckGroup::CreateButton(int index)
@@ -113,6 +127,7 @@ bool CCheckGroup::CreateButton(int index)
                             m_subwin,x1,y1,x2,y2))                 return(false);
    if(!m_rows[index].Text(""))                                     return(false);
    if(!Add(m_rows[index]))                                         return(false);
+   m_rows[index].Hide();
 //--- succeed
    return(true);
   }
@@ -127,7 +142,11 @@ bool CCheckGroup::AddItem(const string item,const long value)
 //--- number of items
    int total=m_strings.Total();
 //--- exit if number of items does not exceed the size of visible area
-   if(total<m_total_view+1) return(Redraw());
+   if(total<m_total_view+1)
+     {
+      if(IS_VISIBLE && total!=0) m_rows[total-1].Show();
+      return(Redraw());
+     }
 //--- if number of items exceeded the size of visible area
    if(total==m_total_view+1)
      {
@@ -157,6 +176,21 @@ bool CCheckGroup::Value(long value)
    m_value=value;
 //---
    return(Redraw());
+  }
+//+------------------------------------------------------------------+
+//| Makes the group visible                                          |
+//+------------------------------------------------------------------+
+bool CCheckGroup::Show(void)
+  {
+//--- call of the method of the parent class
+   if(!CWndClient::Show()) return(false);
+//--- loop by rows
+   int total=m_values.Total();
+//   if(total>m_total_view) total=m_total_view;
+   for(int i=total;i<m_total_view;i++)
+      m_rows[i].Hide();
+//--- handled
+   return(true);
   }
 //+------------------------------------------------------------------+
 //|                                                                  |

@@ -31,6 +31,7 @@ public:
                     ~CListView(void);
    //--- create
    virtual bool      Create(const long chart,const string name,const int subwin,const int x1,const int y1,const int x2,const int y2);
+   virtual void      Destroy(const int reason=0);
    //--- chart event handler
    virtual bool      OnEvent(const int id,const long& lparam,const double& dparam,const string& sparam);
    //--- set up
@@ -118,6 +119,17 @@ bool CListView::Create(const long chart,const string name,const int subwin,const
    return(true);
   }
 //+------------------------------------------------------------------+
+//| Delete group of controls                                         |
+//+------------------------------------------------------------------+
+void CListView::Destroy(const int reason)
+  {
+//--- call of the method of the parent class
+   CWndClient::Destroy(reason);
+//--- clear items
+   m_strings.Clear();
+   m_values.Clear();
+  }
+//+------------------------------------------------------------------+
 //| Set parameter                                                    |
 //+------------------------------------------------------------------+
 bool CListView::TotalView(const int value)
@@ -139,7 +151,7 @@ bool CListView::TotalView(const int value)
 bool CListView::Show(void)
   {
 //--- call of the method of the parent class
-   CWndContainer::Show();
+   CWndClient::Show();
 //--- number of items
    int total=m_strings.Total();
 //---
@@ -176,25 +188,8 @@ bool CListView::CreateRow(const int index)
 //+------------------------------------------------------------------+
 bool CListView::AddItem(const string item,const long value)
   {
-//--- add
-   if(!m_strings.Add(item)) return(false);
-   if(!m_values.Add((value)?value:m_values.Total())) return(false);
-//--- number of items
-   int total=m_strings.Total();
-//--- exit if number of items does not exceed the size of visible area
-   if(total<m_total_view+1) return(Redraw());
-//--- if number of items exceeded the size of visible area
-   if(total==m_total_view+1)
-     {
-      //--- enable vertical scrollbar
-      if(!VScrolled(true)) return(false);
-      //--- and immediately make it invisible (if needed)
-      if(!OnVScrollShow()) return(false);
-     }
-//--- set up the scrollbar
-   m_scroll_v.MaxPos(m_strings.Total()-m_total_view);
-//--- redraw
-   return(Redraw());
+//--- method left for compatibility with previous version
+   return(ItemAdd(item,value));
   }
 //+------------------------------------------------------------------+
 //| Add item (row)                                                   |

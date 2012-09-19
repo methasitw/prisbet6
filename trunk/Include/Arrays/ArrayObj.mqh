@@ -34,15 +34,15 @@ public:
    bool              Resize(const int size);
    bool              Shutdown(void);
    //--- methods of filling the array
-   bool              Add(const CObject *element);
+   bool              Add(CObject *element);
    bool              AddArray(const CArrayObj *src);
-   bool              Insert(const CObject *element,const int pos);
+   bool              Insert(CObject *element,const int pos);
    bool              InsertArray(const CArrayObj *src,const int pos);
    bool              AssignArray(const CArrayObj *src);
    //--- method of access to thre array
    CObject*          At(const int index)                        const;
    //--- methods of changing
-   bool              Update(const int index,const CObject *element);
+   bool              Update(const int index,CObject *element);
    bool              Shift(const int index,const int shift);
    //--- methods of deleting
    CObject*          Detach(const int index);
@@ -52,7 +52,7 @@ public:
    //--- method for comparing arrays
    bool              CompareArray(const CArrayObj *Array)       const;
    //--- methods for working with the sorted array
-   bool              InsertSort(const CObject *element);
+   bool              InsertSort(CObject *element);
    int               Search(const CObject *element)             const;
    int               SearchGreat(const CObject *element)        const;
    int               SearchLess(const CObject *element)         const;
@@ -191,7 +191,7 @@ bool CArrayObj::Shutdown(void)
 //+------------------------------------------------------------------+
 //| Adding an element to the end of the array.                       |
 //+------------------------------------------------------------------+
-bool CArrayObj::Add(const CObject *element)
+bool CArrayObj::Add(CObject *element)
   {
 //--- checking
    if(!CheckPointer(element)) return(false);
@@ -223,7 +223,7 @@ bool CArrayObj::AddArray(const CArrayObj *src)
 //+------------------------------------------------------------------+
 //| Inserting an element in the specified position.                  |
 //+------------------------------------------------------------------+
-bool CArrayObj::Insert(const CObject *element,const int pos)
+bool CArrayObj::Insert(CObject *element,const int pos)
   {
 //--- checking
    if(pos<0 || !CheckPointer(element)) return(false);
@@ -299,7 +299,7 @@ CObject* CArrayObj::At(const int index) const
 //+------------------------------------------------------------------+
 //| Updating element in the specified position.                      |
 //+------------------------------------------------------------------+
-bool CArrayObj::Update(const int index,const CObject *element)
+bool CArrayObj::Update(const int index,CObject *element)
   {
 //--- checking
    if(index<0 || !CheckPointer(element) || index>=m_data_total) return(false);
@@ -462,7 +462,7 @@ void CArrayObj::QuickSort(int beg,int end,const int mode)
 //+------------------------------------------------------------------+
 //| Inserting element in a sorted array.                             |
 //+------------------------------------------------------------------+
-bool CArrayObj::InsertSort(const CObject *element)
+bool CArrayObj::InsertSort(CObject *element)
   {
    int pos;
 //--- checking

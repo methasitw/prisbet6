@@ -189,7 +189,6 @@ long N = 1 + ( valuesqrt / 2);
   double RiskManagement::getN()
   {
    double atr = 0.0;
-   if(!CopyBufferAsSeries(ExtATRHandle,0,0,14,true,ATR)) return(-1);
-    atr = ATR[0];
+
     return(atr);
   }

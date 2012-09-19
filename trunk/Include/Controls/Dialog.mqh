@@ -66,6 +66,9 @@ protected:
    //--- handlers of the dependent controls events
    virtual void      OnClickCaption(void);
    virtual void      OnClickButtonClose(void);
+   //--- access properties of caption
+   void              CaptionAlignment(const int flags,const int left,const int top,const int right,const int bottom)
+                        { m_caption.Alignment(flags,left,top,right,bottom); }
    //--- access properties of client area
    bool              ClientAreaVisible(const bool visible) { return(m_client_area.Visible(visible)); }
    int               ClientAreaLeft(void)            const { return(m_client_area.Left());           }
@@ -248,6 +251,8 @@ bool CDialog::CreateButtonClose(void)
    if(!m_button_close.BmpNames("::res\\Close.bmp"))                             return(false);
    if(!CWndContainer::Add(m_button_close))                                      return(false);
    m_button_close.Alignment(WND_ALIGN_RIGHT,0,0,off+CONTROLS_DIALOG_BUTTON_OFF,0);
+//--- change caption
+   CaptionAlignment(WND_ALIGN_WIDTH,off,0,off+(CONTROLS_BUTTON_SIZE+CONTROLS_DIALOG_BUTTON_OFF),0);
 //--- succeed
    return(true);
   }
@@ -611,6 +616,8 @@ bool CAppDialog::CreateButtonMinMax(void)
    if(!CWndContainer::Add(m_button_minmax))                                     return(false);
    m_button_minmax.Locking(true);
    m_button_minmax.Alignment(WND_ALIGN_RIGHT,0,0,off+CONTROLS_BUTTON_SIZE+2*CONTROLS_DIALOG_BUTTON_OFF,0);
+//--- change caption
+   CaptionAlignment(WND_ALIGN_WIDTH,off,0,off+2*(CONTROLS_BUTTON_SIZE+CONTROLS_DIALOG_BUTTON_OFF),0);
 //--- succeed
    return(true);
   }

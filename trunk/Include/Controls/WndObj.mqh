@@ -83,7 +83,6 @@ bool CWndObj::OnEvent(const int id,const long& lparam,const double& dparam,const
         }
      }
 //--- event was not handled
-//   return(false);
    return(CWnd::OnEvent(id,lparam,dparam,sparam));
   }
 //+------------------------------------------------------------------+

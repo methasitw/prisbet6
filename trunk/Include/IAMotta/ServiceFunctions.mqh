@@ -231,6 +231,10 @@ double CExpertAdvisor::NormalTP(int dir,double op,double pr,int TP,double stop)
 double CExpertAdvisor::NormalSL(int dir,double op,double pr,int SL,double stop)
   {
    if(SL==0) return(NormalPrice(0));
+     printf("op " + op +" SL " + SL + " m_pnt "  +m_pnt +" el maximo tiene que ser el reverse mas el stop level reverse " +  pr + " stop level "+ stop);
+  
+  printf("op+SL*m_pnt  " + (op+SL*m_pnt) +" pr+stop " + (pr+stop) );
+  
    if(dir==ORDER_TYPE_BUY || dir==ORDER_TYPE_BUY_STOP || dir==ORDER_TYPE_BUY_LIMIT) return(NormalPrice(MathMin(op-SL*m_pnt,pr-stop)));
    if(dir==ORDER_TYPE_SELL || dir==ORDER_TYPE_SELL_STOP || dir==ORDER_TYPE_SELL_LIMIT) return(NormalPrice(MathMax(op+SL*m_pnt,pr+stop)));
    return(WRONG_VALUE);

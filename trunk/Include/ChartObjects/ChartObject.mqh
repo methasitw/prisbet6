@@ -47,6 +47,8 @@ public:
    bool              Width(const int new_width)                                  const;
    bool              Background(void)                                            const;
    bool              Background(const bool new_back)                             const;
+   bool              Fill(void)                                                  const;
+   bool              Fill(const bool new_fill)                                   const;
    long              Z_Order(void)                                               const;
    bool              Z_Order(const long value)                                   const;
    bool              Selected(void)                                              const;
@@ -297,6 +299,26 @@ bool CChartObject::Background(const bool new_back) const
    if(m_chart_id==-1) return(false);
 //--- result
    return(ObjectSetInteger(m_chart_id,m_name,OBJPROP_BACK,new_back));
+  }
+//+------------------------------------------------------------------+
+//| Get the "Filling" flag.                                          |
+//+------------------------------------------------------------------+
+bool CChartObject::Fill(void) const
+  {
+//--- checking
+   if(m_chart_id==-1) return(false);
+//--- result
+   return(ObjectGetInteger(m_chart_id,m_name,OBJPROP_FILL));
+  }
+//+------------------------------------------------------------------+
+//| Set the "Filling" flag.                                          |
+//+------------------------------------------------------------------+
+bool CChartObject::Fill(const bool new_fill) const
+  {
+//--- checking
+   if(m_chart_id==-1) return(false);
+//--- result
+   return(ObjectSetInteger(m_chart_id,m_name,OBJPROP_FILL,new_fill));
   }
 //+------------------------------------------------------------------+
 //| Get the "Z-order" property.                                      |
