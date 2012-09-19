@@ -43,6 +43,7 @@ bool TradeSignalCounter(bool &UpSignal,bool &DnSignal)
       if(Ind[0]<0 && Ind[1]>0) UpSignal=true;
       if(Ind[1]<0 && Sig[0]<Sig[1] && Sig[1]>Sig[2]) DnSignal=true;
       if(Ind[1]>0 && Sig[0]>Sig[1] && Sig[1]<Sig[2]) UpSignal=true;
+     
       return(true);
      }
    return(false);
@@ -89,6 +90,7 @@ double Money_M()
 //+-----------------------------------+
 bool PositionOpen(ENUM_POSITION_TYPE Type)
   {
+   printf("something");
    MqlTradeRequest request;
    MqlTradeResult result;
    MqlTradeCheckResult check;

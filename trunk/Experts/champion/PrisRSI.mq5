@@ -1,14 +1,8 @@
-//+------------------------------------------------------------------+
-//      
-//Consideraciones generales
-//Sistema tipo swing ==> escasas oportunidades de podium pero altas top ten
-
-// probar errores 
-// Algo guay para este sistema es que si el precio ha recorrido mucha distancia
-// y no ha metido su segunda orden se mete y punto !!!
-
-//+------------------------------------------------------------------+
-#property copyright "hippie Corp."
+//+----------------------------------------------------------------------------+
+//|                                                                   Pris.mq5 |
+//|                                         Copyright © 2011, David Monteagudo |
+//+----------------------------------------------------------------------------+
+#property copyright "David Monteagudo"
 
 #include <Trade\Trade.mqh>    
 #include <Trade\AccountInfo.mqh>
@@ -17,28 +11,23 @@
 //+-----------------------------------+
 input int ma_period_fast=10;         
 input int ma_period_slow = 18;  
-input int ma_period_slowest = 850;  
+input int ma_period_slowest = 4500;  
 input int atr_period = 14;
-
-
 input int BB_Period = 40;
 input double BB_Dispersion = 2;
 
 
-//--- input parameters
+//--- Money and risk management input parameters
 
-input int positions =2;
-input double volP = 6; // volatilidad que arriesgamos en la entrada
+input int positions =4 ;
+input double volP = 6; 
 input double vol = 3; 
-
-
-input int  dist = 2 ;
-input double tp = 8;
-
-input double Risk  = 0.1;
+input double  dist = 2.5 ;
+input double tp = 6;
+input double Risk  = 0.02;
  
 
-int            MaxNumberOrders  ; 
+int  MaxNumberOrders  ; 
 int  MA_handle_fast,MA_handle_slow,MA_handle_slowest, ATR_handle, BB_handle,RSI_Handle;
 
 CTrade trade;  
@@ -66,21 +55,20 @@ int OnInit()
     BB_handle=iBands(NULL,0,BB_Period,0,BB_Dispersion,PRICE_CLOSE);
     if(BB_handle==INVALID_HANDLE) Print(" Failed to get handle of the BB indicator");
 
-   
     RSI_Handle = iRSI(NULL,0,atr_period,PRICE_CLOSE);
-     if(RSI_Handle==INVALID_HANDLE) Print(" Failed to get handle of the BB indicator");
+     if(RSI_Handle==INVALID_HANDLE) Print(" Failed to get handle of the RSI indicator");
    return(0);
   }
   
 
 void OnDeinit(const int reason)
 {
- //  IndicatorRelease(MA_handle_fast); // delete indicators
-  // IndicatorRelease(MA_handle_slow); 
-  // IndicatorRelease(MA_handle_slowest); 
+   IndicatorRelease(MA_handle_fast); 
+   IndicatorRelease(MA_handle_slow); 
+   IndicatorRelease(MA_handle_slowest); 
    IndicatorRelease(ATR_handle);  
-  // IndicatorRelease(RSI_Handle);  
-  // IndicatorRelease(BB_handle);  
+   IndicatorRelease(RSI_Handle);  
+   IndicatorRelease(BB_handle);  
 
 }
 
@@ -91,7 +79,7 @@ void OnTick()
      {
    
     int Mybars=Bars(_Symbol,_Period);
-      if(Mybars<100) // if bars<100
+      if(Mybars<100)
         {
          Alert("We have less than 100 bars on the chart, the Expert Advisor will exit!!!");
          return;
@@ -99,8 +87,6 @@ void OnTick()
    
       double MA_fast[],MA_slow[],MA_slowest[],  ATR[], Upper[], Lower[],RSI[];
      
-
-   //--- copy newly appeared data in the arrays
       if(CopyBuffer(MA_handle_fast,0,0,3,MA_fast)<=0) return;
       if(CopyBuffer(MA_handle_slow,0,0,3,MA_slow)<=0) return;
       if(CopyBuffer(MA_handle_slowest,0,0,3,MA_slowest)<=0) return;
@@ -118,6 +104,7 @@ void OnTick()
 	    ArraySetAsSeries(RSI,true);
       
     bool buy = false, sell= false, close= false, pyr = false;
+    
     double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5); 
     double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_BID),5); 
    
@@ -125,55 +112,54 @@ void OnTick()
      HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));  
     int dir = PositionGetInteger(POSITION_TYPE);
     
-		// Si no hay posiciones abiertas Analisis de señales de  buy, sell 
+		// if there is no open positions check signal
     if(!PositionSelect(_Symbol)) 
       {
          buy   =(MA_fast[0] > MA_slow[0] && MA_fast[1] < MA_slow[1]);
-               if (buy) printf(" Signal Buy");
+               if (buy){ printf("");  printf("Signal Buy"); }
          sell  = (MA_fast[0] < MA_slow[0] && MA_fast[1] > MA_slow[1]) ;
-                 if (sell) printf(" Signal Sell");
+                 if (sell) {printf("");  printf("Signal Sell");}
          close = false;pyr = false;
        }
-     else // Si existen posiciones abiertas buscamos piramidar o cerrar 
+     else // check pyramiding
        {    
-			  double cop =  LastDealOpenPrice(); // precio último deal
-			  //Si el precio esta a una distancia adecuada seguimos para cerrar o piramidar
-			   if ((dir == ORDER_TYPE_BUY && (cop + ATR[0]*dist) < Ask)	// BUY && C + ATR < S
-									||
-				 (dir == ORDER_TYPE_SELL && (cop - ATR[0]*dist) > Bid  ))  // SELL && C - ATR > S
+			  double cop =  LastDealOpenPrice(); 
+			
+			   if ((dir == ORDER_TYPE_BUY && (cop + ATR[0]*dist) < Ask)	||	 (dir == ORDER_TYPE_SELL && (cop - ATR[0]*dist) > Bid  )) 
 				{ 
-			   if( HistoryOrdersTotal() < MaxNumberOrders ) 
+			   if( HistoryOrdersTotal() < MaxNumberOrders && PositionGetDouble(POSITION_VOLUME)<=14.9) 
 		
-				   {//piramidamos
-						// printf(" Precio ya esta a una distancia adecuada  Bid: " + Bid + " cop: "  + cop );
+				   {
 						  if (dir == ORDER_TYPE_BUY)    
 						   {
 								pyr=(RSI[0] < 49);
 								if (pyr) {
-										printf(" pyr position  by signal : Bid  : " + Bid + " Lower[0] "  + Lower[0]);
-										deal(dir,  ATR[0]*volP, pyr,Money_M(ATR[0]*volP,true));
+										printf("Buy another deal ");
+										deal(dir,  NormalizeDouble(ATR[0]*volP,5),true);
+										Sleep(1000);
 										}		
 							}
-						   else if (RSI[0] > 51 )
+						   else if ( dir == ORDER_TYPE_SELL)
 							 {
-								pyr =( Ask > Upper[0]);
+								pyr =( RSI[0] > 51);
 								if (pyr)  {
-											printf(" pyr position  by signal : Ask  : " + Ask + " Upper[0] "  + Upper[0]);
-											deal(dir,  ATR[0]*volP, pyr,Money_M(ATR[0]*volP,true));
+											printf("Sell another deal " );
+											deal(dir,   NormalizeDouble(ATR[0]*volP,5), true);
+											Sleep(1000);
 											}
 							  }
 							   
 					}
-					   else
-					   { //cerramos  
+					//  check close
+			 else  if ((dir == ORDER_TYPE_BUY && (cop + ATR[0]*dist*2) < Ask) ||  (dir == ORDER_TYPE_SELL && (cop - ATR[0]*dist*2) > Bid  ))  
+					   {
 							if (dir == ORDER_TYPE_SELL)
 								{
 								  close =  ( Ask < Lower[0]);
 									if (close)
 									{
-										printf(" position BUY close by signal : Ask  : " + Ask + " Lower[0] "  + Lower[0]);
-									    printf( "MaxNumberOrders " +MaxNumberOrders+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
-										printf( "HistoryOrdersTotal " +HistoryOrdersTotal()+ "POSITION CERRADA: ACCOUNT_BALANCE: "  + AccountInfoDouble(ACCOUNT_BALANCE) +" ACCOUNT_EQUITY: "  + AccountInfoDouble(ACCOUNT_EQUITY));
+										printf("Position BUY close by signal ");
+									   printf("Position volumen: "  + PositionGetDouble(POSITION_VOLUME) +" position profit: "  + PositionGetDouble(POSITION_PROFIT));
 										trade.PositionClose(_Symbol,1);
 									}
 								}
@@ -182,58 +168,35 @@ void OnTick()
 								close =( Bid > Upper[0] );
 								  if (close)  
 									{
-										printf(" position SELL close by signal :Bid  : " + Bid + " Upper[0] "  + Upper[0]);
-										printf( "MaxNumberOrders " +MaxNumberOrders+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
-										printf( "HistoryOrdersTotal " +HistoryOrdersTotal()+ "POSITION CERRADA: ACCOUNT_BALANCE: "  + AccountInfoDouble(ACCOUNT_BALANCE) +" ACCOUNT_EQUITY: "  + AccountInfoDouble(ACCOUNT_EQUITY));
+										printf("Position SELL close by signal " );
+										printf("position volumen: "  + PositionGetDouble(POSITION_VOLUME) +" position profit: "  + PositionGetDouble(POSITION_PROFIT));
 										trade.PositionClose(_Symbol,1);
 									}
+
 							  }
 						}  
 				}
 			}
       
-      /*
-      PRocesamos el deal y calculamos el numero de posiciones q va a tener
-      */
+      //Calculate the number of deals by position
       if (!PositionSelect(_Symbol) && (buy || sell)) 
       {
-      // Determina el numero de piramidaciones dependiendo de la situacion del cruce de medias cortas respecto la larga
-       if((buy && Bid  > MA_slowest[0])||( sell && Ask  < MA_slowest[0]  ) )
+         if((buy && Bid  > MA_slowest[0])||( sell && Ask  < MA_slowest[0]  ) )
                {         
-               if(buy) printf(__FUNCTION__+  " just one BUY AND bid > MA " + Bid +" > "+  MA_slowest[0]   );
-                else if (sell) printf(__FUNCTION__+  " just one SELL AND Ask < MA " + Ask +" < "+  MA_slowest[0]   );
+               if(buy) printf(  "Just one BUY "  );
+                else if (sell) printf(  "Just one SELL "  );
                  MaxNumberOrders  = 1;
               }
          else if ((buy && Ask  < MA_slowest[0]) ||( sell && Bid > MA_slowest[0])) 
                { 
-                if(buy) printf(__FUNCTION__+  " two BUY AND bid > MA " + Bid +" > "+  MA_slowest[0]   );
-                else if (sell) printf(__FUNCTION__+  " two SELL AND Ask < MA " + Ask +" < "+  MA_slowest[0]   );
+                if(buy) printf(  positions + " Positions BUY  "  );
+                else if (sell) printf(  positions + " Positions SELL"  );
                  MaxNumberOrders  =  positions;
                }  
               
-               
-                double no = 0 ;
-               double lot = Money_M(ATR[0]*vol,false);
-               printf("no " + no + " lot " + lot  );
-             
-       if (lot>5)
-       {
-           no=lot/4.99;
-            for (int i =0; i<no; i++)
-              { printf("no " + no + " lot " + lot  );
-               if (lot > 5)
-                         lot = 5;
-               
-				if (buy)  deal(ORDER_TYPE_BUY, ATR[0]*vol,false,lot);
-				else if (sell)deal(ORDER_TYPE_SELL, ATR[0]*vol,false,lot);
-				lot = lot -5;
-				
-				}}
-				else
-				{
-					if (buy)  deal(ORDER_TYPE_BUY, ATR[0]*vol,false,lot);
-				else if (sell)deal(ORDER_TYPE_SELL, ATR[0]*vol,false,lot);
-				}
+				if (buy)  deal(ORDER_TYPE_BUY, NormalizeDouble(ATR[0]*vol,5),false);
+				else if (sell)deal(ORDER_TYPE_SELL, NormalizeDouble(ATR[0]*vol,5),false);
+	
         }
          
      buy = false; sell = false; close = false; pyr = false;
@@ -241,20 +204,16 @@ void OnTick()
 
 
 
-/*
-Necesito una función que me diga en base a la direccion el precio base ! do I 
-*/
 
-bool deal(long dir,  double pips, bool pyr, double lot)
+bool deal(long dir,  double pips, bool pyr)
 {
 
-      printf(__FUNCTION__+ " Abrimos posicion con un stop de  " +pips  + " pips. un take profit de : " + pips*tp);
-      if(dir == ORDER_TYPE_BUY)        // cuanto es lo minimo para apostar ??
+      printf( "Deal with " +pips  + " pips. Take profit : " + pips*tp);
+      if(dir == ORDER_TYPE_BUY)      
                     {
-                    printf("BUY ### pips : " + pips );
                     trade.PositionOpen(_Symbol,                                          
                                         ORDER_TYPE_BUY,                                   
-                                        lot,                                        
+                                        Money_M(pips,pyr),                                        
                                           NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5),                                              
                                           NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5) - pips,                          
                                           NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5) + pips*tp,                        
@@ -263,10 +222,9 @@ bool deal(long dir,  double pips, bool pyr, double lot)
                     }
                     else if (ORDER_TYPE_SELL)
                     {
-                     printf("SELL ### pips : " + pips );
                      trade.PositionOpen(_Symbol,                                          
                                         ORDER_TYPE_SELL,                                   
-                                        lot,                                        
+                                        Money_M(pips,pyr),                                        
                                           NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_BID),5),                                              
                                           NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_BID),5) + pips,                          
                                           NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_BID),5) - pips*tp,                        
@@ -279,29 +237,32 @@ bool deal(long dir,  double pips, bool pyr, double lot)
 
 double Money_M(double pips, bool pyr)
 {
+    double risk = 0;
+    double lot = -1 ;
     
-   printf(__FUNCTION__+ " account.FreeMargin():  " + account.FreeMargin());
-   double risk = 0;
    if (!pyr)
-         risk = account.FreeMargin()*Risk;
-            else risk = account.FreeMargin()*(Risk);
-    
-         pips = pips *100000 ;
-         double lot = -1 ;
-
-           lot = risk /pips ;
-          printf(__FUNCTION__+ " Abrimos posicion con Volumen de " + lot +  " pips : "+  pips );
-   
-   if (pyr)
    {
+   printf( "FreeMargin:  " + account.FreeMargin());
+   risk = account.FreeMargin()*Risk;
+   }
+   else{
+   double amount = account.FreeMargin() + PositionGetDouble(POSITION_PROFIT);
+   risk = amount*Risk;
+      printf( "FreeMargin + position profit  " + amount );
+   }
+  
+   pips = pips *100000 ;
+   
+   lot = risk /pips ;
+   lot = NormalizeDouble(lot,2);
+   printf( "Deal with lot : " + lot +  " pips : "+  pips );
+
      if (lot > 5)  lot = 4.99;
        if (PositionSelect(_Symbol))
           if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )
                   lot = 14.99 -  PositionGetDouble(POSITION_VOLUME);
-                  return ((NormalizeDouble(lot,2)));
-      }
-         
-      else return ((NormalizeDouble(lot,2)));
+     return (NormalizeDouble(lot,2));
+ 
 }
   
   
