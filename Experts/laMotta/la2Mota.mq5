@@ -18,7 +18,7 @@ input int InpSlowEMA       = 25 ;            // InpSlowEMA LaMotta
 input int  InpSlowestEMA   = 850;            // InpSlowestEMA LaMotta
    
    
-input ENUM_TIMEFRAMES period = PERIOD_M15;
+input ENUM_TIMEFRAMES period = PERIOD_H1;
 
 
 // risk management
@@ -41,7 +41,7 @@ protected:
    int            MaxNumberOrders  ; 
 public:
 	void        LaMotta();
-	void       ~LaMotta();
+//void       ~LaMotta();
 	
 	 bool      Init(string smb,ENUM_TIMEFRAMES tf); // initialization
 	 bool      Main();                              // main function
@@ -68,6 +68,7 @@ public:
 //------------------------------------------------------------------	LaMotta
 void LaMotta::LaMotta() { }
 //------------------------------------------------------------------	~LaMotta
+/*
 void LaMotta::~LaMotta()
   {
    IndicatorRelease(Bands_handle); // delete indicators
@@ -77,6 +78,7 @@ void LaMotta::~LaMotta()
 
    
   }
+  */
 //------------------------------------------------------------------	
 //    Init
 //------------------------------------------------------------------	
@@ -170,6 +172,7 @@ bool LaMotta::Main()
   {       
 
       if(dir!=CheckSignalClose(dir, false)) return;
+        
          printf(__FUNCTION__+ "MaxNumberOrders " +MaxNumberOrders+ "POSITION CERRADA: POSITION_VOLUME: "  + PositionGetDouble(POSITION_VOLUME) +" POSITION_PROFIT: "  + PositionGetDouble(POSITION_PROFIT));
          printf(__FUNCTION__+ "HistoryOrdersTotal " +HistoryOrdersTotal()+ "POSITION CERRADA: ACCOUNT_BALANCE: "  + AccountInfoDouble(ACCOUNT_BALANCE) +" ACCOUNT_EQUITY: "  + AccountInfoDouble(ACCOUNT_EQUITY));
          rm.m_trade.PositionClose(m_smb,1);
