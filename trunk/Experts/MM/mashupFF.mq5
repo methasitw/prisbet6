@@ -65,7 +65,7 @@ void OnTick()
           if (buy || sell)
           {
             double no = 0 ;
-            double lot = fixedRatio(sl);
+            double lot = fixedFractional(sl);
           double tmp = 0 ;
             if (lot>5)
                    {
@@ -135,20 +135,7 @@ bool PlaceOrder(long dir,double lot)
 }
 
 
-double getLot(double pips)
-{
-     
-   double risk = account.FreeMargin()*bet;
-   pips = pips *100000 ;
-   double lot = -1 ;
-   lot = risk /pips ;
-  
-    if (PositionSelect(_Symbol))
-    if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )
-            lot = 14.99 -  PositionGetDouble(POSITION_VOLUME);
-            return ((NormalizeDouble(lot,2)));
-    
-}
+
 double fixedFractional(double pips )
 {
    pips = pips *100000 ;
@@ -159,21 +146,7 @@ double fixedFractional(double pips )
    return ((NormalizeDouble(lot,2)));
 }
 
-double fixedRatio(double pips)
-{
-double DD = 5400;
-  double Equity =AccountInfoDouble(ACCOUNT_FREEMARGIN);
-  double DeltaNeutro = DD/2;
-  double value = 1 + 8*(Equity/DeltaNeutro );
-  double valuesqrt = sqrt(value);
-  double N = 1 + ( valuesqrt / 2);
 
-  
-  
-  N = N*0.1;
-  printf( " N " + N + " valuesqrt " +  valuesqrt  );
- return ((NormalizeDouble( N,2)));
-}
 
 
   string ResultRetcodeDescription(int retcode)
