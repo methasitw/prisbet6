@@ -135,29 +135,6 @@ bool PlaceOrder(long dir,double lot)
 }
 
 
-double getLot(double pips)
-{
-     
-   double risk = account.FreeMargin()*bet;
-   pips = pips *100000 ;
-   double lot = -1 ;
-   lot = risk /pips ;
-  
-    if (PositionSelect(_Symbol))
-    if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )
-            lot = 14.99 -  PositionGetDouble(POSITION_VOLUME);
-            return ((NormalizeDouble(lot,2)));
-    
-}
-double fixedFractional(double pips )
-{
-   pips = pips *100000 ;
-   double risk =  MathSqrt(account.FreeMargin()*pips*bet);
-   double lot = -1 ;
-    printf("el riesgo que queremos es: " + risk +" pips " + pips);
-   lot = risk /pips ;
-   return ((NormalizeDouble(lot,2)));
-}
 
 double fixedRatio(double pips)
 {
@@ -168,7 +145,6 @@ double DD = 5400;
   double valuesqrt = sqrt(value);
   double N = 1 + ( valuesqrt / 2);
 
-  
   
   N = N*0.1;
   printf( " N " + N + " valuesqrt " +  valuesqrt  );
