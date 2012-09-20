@@ -165,6 +165,25 @@ double fixedFractional(double pips )
             return ((NormalizeDouble(lot,2)));
 }
 
+double fixedRatio(double pips)
+{
+double DD = 5000;
+  long Equity =AccountInfoDouble(ACCOUNT_FREEMARGIN);
+  long DeltaNeutro = DD/2;
+  long value = 1 + 8*(Equity/DeltaNeutro );
+  long valuesqrt = sqrt(value);
+  long N = 1 + ( valuesqrt / 2);
+
+if (N > 5)  N = 4.99;
+ 
+ if (PositionSelect(_Symbol))
+    if ( (N +PositionGetDouble(POSITION_VOLUME))  > 15.0 )
+            N = 14.99 -  PositionGetDouble(POSITION_VOLUME);
+            
+  printf(__FUNCTION__  + "N " + N + " valuesqrt " +  valuesqrt + " PositionGetDouble(POSITION_VOLUME) "  +PositionGetDouble(POSITION_VOLUME) );
+  return N;
+}
+
 
   string ResultRetcodeDescription(int retcode)
   {
