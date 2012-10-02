@@ -12,9 +12,9 @@ input int Slow=450;
 input int Sign=35;
 input int atr_period = 14;
 
+input double sl = 1;
+input double tp = 2;
 
-input double sl = 0.009;
-input double tp = 0.020;
 input double bet  = 0.1;
  
 
@@ -53,13 +53,9 @@ void OnTick()
       sell=false;
       buy=false;
       
-      
-         
-
-
-        if(CopyBuffer(ATR_handle,0,0,3,ATR)<=0) return;
-      if(CopyBuffer(MACD,0,1,2,Ind)<=0)return;
-      if(CopyBuffer(MACD,1,1,3,Sig)<=0)return;
+      if(CopyBuffer(ATR_handle,0,0,3,ATR)<=0) return;
+      if(CopyBuffer(MACD_handle,0,1,2,Ind)<=0)return;
+      if(CopyBuffer(MACD_handle,1,1,3,Sig)<=0)return;
       
 
       ArraySetAsSeries(Ind,true);
@@ -73,10 +69,13 @@ void OnTick()
       if(Ind[0]<0 && Ind[1]>0) sell =true;
       if(Ind[1]<0 && Sig[0]<Sig[1] && Sig[1]>Sig[2]) buy=true;
       if(Ind[1]>0 && Sig[0]>Sig[1] && Sig[1]<Sig[2]) sell  =true;
-          if (buy || sell)
+      
+      
+      
+      if (buy || sell)
           {
             double no = 0 ;
-            double lot = fixedFractional(sl);
+            double lot = fixedFractional(ATR[0]*3);
           double tmp = 0 ;
             if (lot>5)
                    {
@@ -87,8 +86,8 @@ void OnTick()
                                     tmp = 5;
                                     else tmp = lot;
                                      
-            				if (buy)  PlaceOrder(ORDER_TYPE_BUY,tmp);
-            				else if (sell)PlaceOrder(ORDER_TYPE_SELL,tmp);
+            				if (buy)  PlaceOrder(ORDER_TYPE_BUY,tmp,ATR[0]*sl,ATR[0]*tp);
+            				else if (sell)PlaceOrder(ORDER_TYPE_SELL,tmp,ATR[0]*sl,ATR[0]*tp);
             				Sleep(1000);
             				if (i == 2) break;
             				lot = lot -5;
@@ -96,8 +95,8 @@ void OnTick()
             			}
          			else
          			{
-         				if (buy)  PlaceOrder(ORDER_TYPE_BUY,lot);
-         				else if (sell)PlaceOrder(ORDER_TYPE_SELL,lot);
+         				if (buy)  PlaceOrder(ORDER_TYPE_BUY,lot,ATR[0]*sl,ATR[0]*tp);
+         				else if (sell)PlaceOrder(ORDER_TYPE_SELL,lot,ATR[0]*sl,ATR[0]*tp);
          			}
          	}
                
@@ -105,7 +104,7 @@ void OnTick()
    }   
 
 
-bool PlaceOrder(long dir,double lot)
+bool PlaceOrder(long dir,double lot, double sl, double tp)
 {
    MqlTradeRequest request;
    MqlTradeResult result;
@@ -120,6 +119,7 @@ bool PlaceOrder(long dir,double lot)
                        request.action = TRADE_ACTION_DEAL;
                        request.symbol = _Symbol;
                        request.volume = lot;
+                       printf("el numero de pips es: sl " + sl +" tp " +tp );
                        request.sl = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5) - sl;
                        request.tp = NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),5) + tp;
                        request.type_filling=ORDER_FILLING_FOK;
