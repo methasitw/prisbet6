@@ -24,7 +24,7 @@ input double volP = 6;
 input double vol = 3; 
 input double  dist = 2.5 ;
 input double tp = 6;
-input double Risk  = 0.02;
+input double Risk  = 0.1;
  
 
 int  MaxNumberOrders  ; 
@@ -236,38 +236,47 @@ bool deal(long dir,  double pips, bool pyr)
 }
 
 
-double Money_M(double pips, bool pyr)
+  
+double getLot(double pips)
 {
-    double risk = 0;
-    double lot = -1 ;
-    
-   if (!pyr)
-   {
-   printf( "FreeMargin:  " + account.FreeMargin());
-   risk = account.FreeMargin()*Risk;
-   }
-   else{
-   double amount = account.FreeMargin() + PositionGetDouble(POSITION_PROFIT);
-   risk = amount*Risk;
-      printf( "FreeMargin + position profit  " + amount );
-   }
-  
+   double risk = account.FreeMargin()*Risk;
    pips = pips *100000 ;
-   
+   double lot = -1 ;
    lot = risk /pips ;
-   lot = NormalizeDouble(lot,2);
-   printf( "Deal with lot : " + lot +  " pips : "+  pips );
-
-     if (lot > 5)  lot = 4.99;
-       if (PositionSelect(_Symbol))
-          if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )
-                  lot = 14.99 -  PositionGetDouble(POSITION_VOLUME);
-     return (NormalizeDouble(lot,2));
- 
+    if (PositionSelect(_Symbol))
+    if ( (lot +PositionGetDouble(POSITION_VOLUME))  > 15.0 )
+            lot = 14.99 -  PositionGetDouble(POSITION_VOLUME);
+            return ((NormalizeDouble(lot,2)));
 }
-  
-  
 
+// filtro:
+// Si la volatilidad de la vela es superior a la media de los ultimos x momentos
+// la entrada no se considera una opcion
+double fixedFractional(double pips )
+{
+   pips = pips *100000 ;
+   double risk =  MathSqrt(account.FreeMargin()*pips*Risk);
+   double lot = -1 ;
+    printf("el riesgo que queremos es: " + risk +" pips " + pips);
+   lot = risk /pips ;
+   return ((NormalizeDouble(lot,2)));
+}
+
+double fixedRatio(double pips)
+{
+double DD = 16000;
+  double Equity =AccountInfoDouble(ACCOUNT_FREEMARGIN);
+  double DeltaNeutro = DD/2;
+  double value = 1 + 8*(Equity/DeltaNeutro );
+  double valuesqrt = sqrt(value);
+  double N = 1 + ( valuesqrt / 2);
+  N = N*0.1;
+  printf( " N " + N + " valuesqrt " +  valuesqrt  );
+  
+  printf("el riesgo que queremos es: " + (pips*  N*100000)+" pips " + pips + " lot: " + N);
+
+ return ((NormalizeDouble( N,2)));
+}
 
 
 //------------------------------------------------------------------  
