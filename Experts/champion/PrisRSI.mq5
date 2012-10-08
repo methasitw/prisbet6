@@ -19,12 +19,12 @@ input double BB_Dispersion = 2;
 
 //--- Money and risk management input parameters
 
-input int positions =2 ;
+input int positions =4 ;
 input double volP = 6; 
 input double vol = 3; 
 input double  dist = 2.5 ;
 input double tp = 6;
-input double Risk  = 0.02;
+input double Risk  = 0.2;
  
 
 int  MaxNumberOrders  ; 
